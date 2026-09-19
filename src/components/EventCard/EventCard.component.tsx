@@ -1,4 +1,4 @@
-import type { EventSlot } from "../../api/api.types";
+import type { EventSlot } from "../../api";
 import { Card, Pre, Title } from "./EventCard.styled";
 
 type EventCardProps = {

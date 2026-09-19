@@ -1,4 +1,4 @@
-import type { ScheduleResponse } from "../api/api.types";
+import type { ScheduleResponse } from "../api";
 
 export const EXAMPLE_EVENT_MOCK_DATA: ScheduleResponse["days"][0]["slots"][0] = {
     id: 621,
