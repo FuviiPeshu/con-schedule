@@ -1,0 +1,47 @@
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const conventionConfig = JSON.parse(
+    readFileSync(resolve(process.cwd(), "config/schedule-config.json"), "utf8")
+) as { apiUrl: string };
+
+export default defineConfig(({ mode }) => {
+    return {
+        base: "/",
+        plugins: [
+            react({
+                babel: {
+                    plugins: [
+                        [
+                            "babel-plugin-styled-components",
+                            {
+                                displayName: mode === "development",
+                                fileName: mode === "development",
+                                meaninglessFileNames: ["index", "styles"],
+                                pure: true,
+                            },
+                        ],
+                    ],
+                },
+            }),
+        ],
+        server: {
+            proxy: {
+                // Proxies the configured API to avoid CORS (for localhost)
+                "/schedule-api": {
+                    target: conventionConfig.apiUrl,
+                    changeOrigin: true,
+                    rewrite: (path) => path.replace(/^\/schedule-api/, ""),
+                },
+            },
+        },
+        test: {
+            globals: true,
+            environment: "jsdom",
+            setupFiles: ["./src/setupTests.ts"],
+        },
+    };
+});

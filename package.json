@@ -1,0 +1,44 @@
+{
+    "name": "con-schedule",
+    "version": "0.1.0",
+    "private": true,
+    "author": "FuviiPeshu",
+    "license": "GPL-3.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite --port 3003 --open",
+        "build": "tsc --noEmit && vite build",
+        "serve": "vite preview --open",
+        "test": "vitest",
+        "typecheck": "tsc --noEmit",
+        "lint": "eslint src --ext ts,tsx"
+    },
+    "dependencies": {
+        "@tanstack/react-query": "5.68.0",
+        "@types/styled-components": "5.1.35",
+        "date-fns": "4.1.0",
+        "date-fns-tz": "3.2.0",
+        "fuse.js": "7.1.0",
+        "react": "19.0.0",
+        "react-dom": "19.0.0",
+        "react-router-dom": "7.18.4",
+        "styled-components": "6.5.3"
+    },
+    "devDependencies": {
+        "@ianvs/prettier-plugin-sort-imports": "4.7.1",
+        "@testing-library/jest-dom": "6.9.1",
+        "@testing-library/react": "16.3.0",
+        "@testing-library/user-event": "14.5.2",
+        "@types/jest": "30.0.0",
+        "@types/react": "19.2.2",
+        "@types/react-dom": "19.2.2",
+        "@typescript-eslint/eslint-plugin": "8.46.2",
+        "@typescript-eslint/parser": "8.46.2",
+        "@vitejs/plugin-react": "4.3.4",
+        "babel-plugin-styled-components": "2.1.4",
+        "jsdom": "26.0.0",
+        "typescript": "5.9.3",
+        "vite": "6.4.3",
+        "vitest": "3.2.7"
+    }
+}
