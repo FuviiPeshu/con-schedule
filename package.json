@@ -9,9 +9,11 @@
         "dev": "vite --port 3003 --open",
         "build": "tsc --noEmit && vite build",
         "serve": "vite preview --open",
-        "test": "vitest",
+        "test": "vitest run --reporter=verbose",
+        "test:watch": "vitest --watch",
         "typecheck": "tsc --noEmit",
-        "lint": "eslint src --ext ts,tsx"
+        "lint": "eslint src --ext ts,tsx",
+        "prettify": "prettier --write ."
     },
     "dependencies": {
         "@tanstack/react-query": "5.68.0",
@@ -37,6 +39,7 @@
         "@vitejs/plugin-react": "4.3.4",
         "babel-plugin-styled-components": "2.1.4",
         "jsdom": "26.0.0",
+        "prettier": "3.9.6",
         "typescript": "5.9.3",
         "vite": "6.4.3",
         "vitest": "3.2.7"

@@ -1,12 +1,13 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
 const conventionConfig = JSON.parse(
     readFileSync(resolve(process.cwd(), "config/schedule-config.json"), "utf8")
-) as { apiUrl: string };
+) as {
+    apiUrl: string;
+};
 
 export default defineConfig(({ mode }) => {
     return {

@@ -13,9 +13,11 @@ Events schedule web app based on public Eurofurence schedule API.
 
 ```bash
 npm install
-npm run dev      # http://localhost:3003
-npm run test     # vitest
-npm run build    # type-check + production build
+npm run dev         # http://localhost:3003
+npm run prettify    # run prettier across all files
+npm run test        # run all tests once
+npm run test:watch  # run tests and keep it listening for changes
+npm run build       # type-check, build
 ```
 
 ## Configuration

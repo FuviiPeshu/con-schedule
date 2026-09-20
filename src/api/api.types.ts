@@ -41,6 +41,8 @@ export type EventSlot = {
     track: TrackRef;
     speakers: SpeakerRef[];
     tags: TagRef[];
+    is_blocker: boolean;
+    slot_index: number;
 };
 
 export type ScheduleDay = {
@@ -53,6 +55,10 @@ export type ScheduleResponse = {
     days: ScheduleDay[];
     event: { name: string; slug: string };
     rooms: { id: number; name: string; position: number }[];
+    tags: Array<TagRef & { color: string }>;
     tracks: TrackRef[];
+    speakers: Array<SpeakerRef & { biography: string | null }>;
     schedule_version: string;
+    imprint_url: string;
+    privacy_url: string;
 };

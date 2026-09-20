@@ -12,7 +12,7 @@ const renderCard = () =>
         </BrowserRouter>
     );
 
-describe("EventCard", () => {
+describe("Components / EventCard", () => {
     it("should render event title and description", () => {
         renderCard();
 
