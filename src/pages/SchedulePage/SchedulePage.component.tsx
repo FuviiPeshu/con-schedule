@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 
 import { EventCard } from "../../components/EventCard/EventCard.component";
 import { FilterInputComponent, FilterSelectComponent } from "../../components/Filters";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useSchedule } from "../../hooks/useSchedule";
 import type { ScheduleFilters, SelectFilterKey } from "../../schedule.types";
 import {
@@ -18,6 +19,7 @@ import {
     StatusText,
 } from "./SchedulePage.styled";
 
+const searchDebounceMs = 128;
 const filterInputConfig = {
     label: "Search",
     filterKey: "search" as keyof ScheduleFilters,
@@ -41,9 +43,15 @@ export const SchedulePage = () => {
     const events = data?.events ?? [];
     const hasActiveFilters = Object.values(filters).some(Boolean);
     const filterOptions = useMemo(() => getFilterOptions(events), [events]);
+    const debouncedSearch = useDebouncedValue(filters.search, searchDebounceMs);
+    const searchForFiltering = filters.search ? debouncedSearch : "";
+    const appliedFilters = useMemo(
+        () => ({ ...filters, search: searchForFiltering }),
+        [filters.room, filters.date, filters.tag, filters.speaker, searchForFiltering]
+    );
     const filteredEvents = useMemo(
-        () => events.filter((event) => eventMatchesFilters(event, filters)),
-        [events, filters]
+        () => events.filter((event) => eventMatchesFilters(event, appliedFilters)),
+        [events, appliedFilters]
     );
 
     const setFilterValue = (filter: keyof ScheduleFilters, value: string) => {

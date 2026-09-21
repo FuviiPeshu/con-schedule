@@ -1,12 +1,33 @@
 import { BrowserRouter } from "react-router-dom";
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SCHEDULE_MOCK_DATA } from "../../__mocks__/schedule.mocks";
 import { buildScheduleData } from "../../api";
 import { useSchedule } from "../../hooks/useSchedule";
 import { SchedulePage } from "./SchedulePage.component";
+
+const pageElements = {
+    get roomFilter() {
+        return screen.getByRole("combobox", { name: "Filter by room" });
+    },
+    get dateFilter() {
+        return screen.getByRole("combobox", { name: "Filter by date" });
+    },
+    get tagFilter() {
+        return screen.getByRole("combobox", { name: "Filter by tag" });
+    },
+    get speakerFilter() {
+        return screen.getByRole("combobox", { name: "Filter by speaker" });
+    },
+    get searchInput() {
+        return screen.getByRole("searchbox", { name: "Search events" });
+    },
+    get clearFiltersButton() {
+        return screen.getByRole("button", { name: "Clear filters" });
+    },
+};
 
 describe("Pages / SchedulePage", () => {
     vi.mock("../../hooks/useSchedule", () => ({
@@ -31,23 +52,21 @@ describe("Pages / SchedulePage", () => {
         } as ReturnType<typeof useSchedule>);
     });
 
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
     it("should filter events by room and date", async () => {
         const user = userEvent.setup();
 
         renderPage();
 
-        await user.selectOptions(
-            screen.getByRole("combobox", { name: "Filter by room" }),
-            "Fursuit Lounge"
-        );
+        await user.selectOptions(pageElements.roomFilter, "Fursuit Lounge");
         expect(screen.getByText("Fursuit Lounge - Fri")).toBeInTheDocument();
         expect(screen.queryByText("Opening Ceremony")).not.toBeInTheDocument();
 
-        await user.click(screen.getByRole("button", { name: "Clear filters" }));
-        await user.selectOptions(
-            screen.getByRole("combobox", { name: "Filter by date" }),
-            "2026-08-20"
-        );
+        await user.click(pageElements.clearFiltersButton);
+        await user.selectOptions(pageElements.dateFilter, "2026-08-20");
         expect(screen.getByText("Opening Ceremony")).toBeInTheDocument();
         expect(screen.queryByText("Fursuit Lounge - Fri")).not.toBeInTheDocument();
     });
@@ -57,33 +76,46 @@ describe("Pages / SchedulePage", () => {
 
         renderPage();
 
-        await user.selectOptions(
-            screen.getByRole("combobox", { name: "Filter by tag" }),
-            "Information"
-        );
+        await user.selectOptions(pageElements.tagFilter, "Information");
         expect(screen.getByText("Opening Ceremony")).toBeInTheDocument();
         expect(screen.queryByText("Fursuit Lounge - Fri")).not.toBeInTheDocument();
 
-        await user.click(screen.getByRole("button", { name: "Clear filters" }));
-        await user.selectOptions(
-            screen.getByRole("combobox", { name: "Filter by speaker" }),
-            "SPEAK2"
-        );
+        await user.click(pageElements.clearFiltersButton);
+        await user.selectOptions(pageElements.speakerFilter, "SPEAK2");
         expect(screen.getByText("Opening Ceremony")).toBeInTheDocument();
         expect(screen.queryByText("Fursuit Lounge - Fri")).not.toBeInTheDocument();
     });
 
     it("should filter event fields and can reset the search", async () => {
-        const user = userEvent.setup();
-
+        vi.useFakeTimers();
         renderPage();
 
-        await user.type(screen.getByRole("searchbox", { name: "Search events" }), "PBUNHA");
+        const searchInput = pageElements.searchInput;
+        act(() => fireEvent.change(searchInput, { target: { value: "PBUNHA" } }));
+        act(() => vi.advanceTimersByTime(128));
         expect(screen.getByText("Fursuit Lounge - Fri")).toBeInTheDocument();
         expect(screen.queryByText("Opening Ceremony")).not.toBeInTheDocument();
 
-        await user.click(screen.getByRole("button", { name: "Clear filters" }));
+        act(() => fireEvent.click(pageElements.clearFiltersButton));
         expect(screen.getByText("Opening Ceremony")).toBeInTheDocument();
+        expect(screen.getByText("Fursuit Lounge - Fri")).toBeInTheDocument();
+    });
+
+    it("should debounce search filtering while updating the input immediately", async () => {
+        vi.useFakeTimers();
+        renderPage();
+
+        const searchInput = pageElements.searchInput;
+        act(() => fireEvent.change(searchInput, { target: { value: "PBUNHA" } }));
+        expect(searchInput).toHaveValue("PBUNHA");
+        expect(screen.getByText("Opening Ceremony")).toBeInTheDocument();
+        expect(screen.getByText("Fursuit Lounge - Fri")).toBeInTheDocument();
+
+        act(() => vi.advanceTimersByTime(100));
+        expect(screen.getByText("Opening Ceremony")).toBeInTheDocument();
+
+        act(() => vi.advanceTimersByTime(100));
+        expect(screen.queryByText("Opening Ceremony")).not.toBeInTheDocument();
         expect(screen.getByText("Fursuit Lounge - Fri")).toBeInTheDocument();
     });
 });

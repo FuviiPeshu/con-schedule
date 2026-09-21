@@ -1,4 +1,4 @@
-# EF Schedule
+# Con Schedule
 
 Events schedule web app based on public Eurofurence schedule API.
 
