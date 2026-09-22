@@ -43,6 +43,20 @@ export default defineConfig(({ mode }) => {
             globals: true,
             environment: "jsdom",
             setupFiles: ["./src/setupTests.ts"],
+            coverage: {
+                provider: "v8",
+                reporter: ["text"],
+                include: ["src/**/*.{ts,tsx}"],
+                exclude: [
+                    "src/**/*.styled.ts",
+                    "src/**/*.test.{ts,tsx}",
+                    "src/__mocks__/**",
+                    "src/index.tsx",
+                    "src/setupTests.ts",
+                    "src/styles/GlobalStyles.ts",
+                    "src/vite-env.d.ts",
+                ],
+            },
         },
     };
 });

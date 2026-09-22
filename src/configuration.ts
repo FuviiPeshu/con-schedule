@@ -4,6 +4,8 @@ export const conName = conConfig.name;
 export const conId = conConfig.identifier;
 export const conTimeZone = conConfig.timeZone;
 
+export const useMocks = conConfig.useMocks;
+
 /** For dev environment go through the vite proxy declared in `vite.config.ts` so the browser doesn't hit cross-origin request */
 export const apiBase = import.meta.env.DEV ? "/schedule-api" : conConfig.apiUrl;
 

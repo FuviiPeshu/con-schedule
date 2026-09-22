@@ -101,6 +101,56 @@ describe("Pages / SchedulePage", () => {
         expect(screen.getByText("Fursuit Lounge - Fri")).toBeInTheDocument();
     });
 
+    it("should show the loading state", () => {
+        mockedUseSchedule.mockReturnValue({
+            data: undefined,
+            isLoading: true,
+        } as ReturnType<typeof useSchedule>);
+
+        renderPage();
+
+        expect(screen.getByText("Loading schedule...")).toBeInTheDocument();
+    });
+
+    it("should show the unavailable state when data is missing", () => {
+        mockedUseSchedule.mockReturnValue({
+            data: undefined,
+            isLoading: false,
+        } as ReturnType<typeof useSchedule>);
+
+        renderPage();
+
+        expect(screen.getByText("No schedule data available.")).toBeInTheDocument();
+    });
+
+    it("should show the empty state when there are no events", () => {
+        mockedUseSchedule.mockReturnValue({
+            data: buildScheduleData({ ...SCHEDULE_MOCK_DATA, days: [] }),
+            isLoading: false,
+        } as ReturnType<typeof useSchedule>);
+
+        renderPage();
+
+        expect(screen.getByText("No events found.")).toBeInTheDocument();
+    });
+
+    it("should show the error banner and no-match state on schedule error", () => {
+        vi.useFakeTimers();
+        mockedUseSchedule.mockReturnValue({
+            data: scheduleData,
+            isLoading: false,
+            isError: true,
+        } as ReturnType<typeof useSchedule>);
+
+        renderPage();
+
+        expect(screen.getByText("Showing mock data.")).toBeInTheDocument();
+        act(() => fireEvent.change(pageElements.searchInput, { target: { value: "not-found" } }));
+        act(() => vi.advanceTimersByTime(128));
+
+        expect(screen.getByText("No events match the current filters.")).toBeInTheDocument();
+    });
+
     it("should debounce search filtering while updating the input immediately", async () => {
         vi.useFakeTimers();
         renderPage();

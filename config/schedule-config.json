@@ -2,5 +2,6 @@
     "name": "Eurofurence",
     "identifier": "EF30",
     "timeZone": "Europe/Berlin",
+    "useMocks": true,
     "apiUrl": "https://cfp.eurofurence.org/ef-schedule-2026/api/schedule"
 }

@@ -5,7 +5,15 @@ import {
     OTHER_EXAMPLE_EVENT_MOCK_DATA,
 } from "../__mocks__/schedule.mocks";
 import type { ScheduleFilters } from "../schedule.types";
-import { emptyFilters, eventMatchesFilters } from "./scheduleFilters.utils";
+import {
+    emptyFilters,
+    eventMatchesFilters,
+    getEventDate,
+    getEventSearchText,
+    getFilterOptions,
+    uniqueOptions,
+    uniqueValues,
+} from "./scheduleFilters.utils";
 
 const openingEvent = EXAMPLE_EVENT_MOCK_DATA;
 const loungeEvent = OTHER_EXAMPLE_EVENT_MOCK_DATA;
@@ -21,6 +29,55 @@ const withFilters = (filters: Partial<ScheduleFilters>): ScheduleFilters => ({
 });
 
 describe("Utils / schedule filters", () => {
+    it("should return only unique, sorted values and options", () => {
+        expect(uniqueValues(["Room B", "", "Room A", "Room B"])).toEqual(["Room A", "Room B"]);
+        expect(
+            uniqueOptions([
+                { value: "b", label: "Zulu" },
+                { value: "", label: "Empty" },
+                { value: "a", label: "Alpha" },
+                { value: "b", label: "Beta" },
+            ])
+        ).toEqual([
+            { value: "a", label: "Alpha" },
+            { value: "b", label: "Beta" },
+        ]);
+    });
+
+    it("should build filter options from event fields and handles missing dates", () => {
+        const eventWithoutDate = { ...loungeEvent, start: null };
+        const options = getFilterOptions([openingEvent, loungeEvent, eventWithoutDate]);
+
+        expect(getEventDate(eventWithoutDate)).toBe("");
+        expect(options.room).toEqual([
+            { value: "Auditorium", label: "Auditorium" },
+            { value: "Fursuit Lounge", label: "Fursuit Lounge" },
+        ]);
+        expect(options.date).toEqual([
+            { value: "2026-08-20", label: "2026-08-20" },
+            { value: "2026-08-21", label: "2026-08-21" },
+        ]);
+        expect(options.tag).toEqual([
+            { value: "EF-Services", label: "EF-Services" },
+            { value: "Information", label: "Information" },
+        ]);
+        expect(options.speaker).toEqual([
+            { value: "SPEAK1", label: "Conops" },
+            { value: "SPEAK2", label: "John Eurofurence" },
+        ]);
+    });
+
+    it("should omit null search values instead of indexing the word null", () => {
+        const eventWithMissingSearchValues = {
+            ...openingEvent,
+            title: null,
+            speakers: [{ ...openingEvent.speakers[0], name: null }],
+            tags: [{ ...openingEvent.tags[0], tag: null }],
+        } as unknown as typeof openingEvent;
+
+        expect(getEventSearchText(eventWithMissingSearchValues)).not.toContain("null");
+    });
+
     it("should match all events when no filters are selected", () => {
         expect(eventMatchesFilters(openingEvent, emptyFilters)).toBe(true);
         expect(eventMatchesFilters(loungeEvent, emptyFilters)).toBe(true);
