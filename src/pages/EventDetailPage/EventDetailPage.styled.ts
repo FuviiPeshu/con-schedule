@@ -6,7 +6,7 @@ import { theme } from "../../styles/theme";
 export const BackLink = styled(Link)`
     background: none;
     border: none;
-    color: ${theme.secondary};
+    color: ${theme.primaryAction};
     cursor: pointer;
     margin-bottom: 16px;
     text-decoration: none;
@@ -21,5 +21,5 @@ export const Panel = styled.article``;
 export const Pre = styled.pre`
     white-space: pre-wrap;
     word-break: break-word;
-    color: ${theme.textSecondary};
+    color: ${theme.textMuted};
 `;

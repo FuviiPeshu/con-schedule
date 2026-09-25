@@ -14,7 +14,7 @@ export const FilterControls = styled.div`
 
 export const ResetButton = styled.button`
     padding: 5px 8px;
-    border: 1px solid ${theme.secondary};
+    border: 1px solid ${theme.primaryDeep};
     border-radius: 2px;
     background: transparent;
     color: ${theme.text};
@@ -28,14 +28,14 @@ export const ResetButton = styled.button`
 
 export const ResultCount = styled.p`
     margin: 0 0 8px;
-    color: ${theme.textSecondary};
+    color: ${theme.textMuted};
     font-size: 0.8rem;
 `;
 
 export const StatusText = styled.p`
-    color: ${theme.textSecondary};
+    color: ${theme.textMuted};
 `;
 
 export const ErrorBanner = styled.p`
-    color: ${theme.error};
+    color: ${theme.statusError};
 `;

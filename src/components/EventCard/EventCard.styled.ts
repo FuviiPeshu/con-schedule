@@ -10,7 +10,7 @@ export const Title = styled.h3`
 export const Card = styled(Link)`
     display: block;
     padding: 8px 0;
-    border-bottom: 1px solid ${theme.secondary};
+    border-bottom: 1px solid ${theme.primaryDeep};
     color: ${theme.text};
     text-decoration: none;
 
@@ -23,5 +23,5 @@ export const Pre = styled.pre`
     margin: 0;
     white-space: pre-wrap;
     word-break: break-word;
-    color: ${theme.textSecondary};
+    color: ${theme.textMuted};
 `;

@@ -1,22 +1,30 @@
-export const theme = {
-    primary: "#00504a",
-    secondary: "#7faca9",
-    background: "#262c2c",
-    black: "#000000",
+export const themeCommon = {
     white: "#ffffff",
-    text: "#e5eeed",
-    textSecondary: "#D4DBDA",
-    warning: "#ee5e22",
-    error: "#b21542",
-    darken: "#404f4f40",
-    lighten: "#f7f7f780",
-    soften: "#f7f7f7a0",
-    superSponsor: "#5300ff",
-    superSponsorText: "#fff7f0",
-    sponsor: "#ffd700",
-    sponsorText: "#001a18",
-    staff: "#ec661f",
-    staffText: "#fff7f0",
+    black: "#000000",
+};
+
+export const theme = {
+    ...themeCommon,
+    primary: "#4011f4",
+    primaryDeep: "#230698",
+    primaryAction: "#c5f411",
+    primaryAccent: "#07fdb3",
+
+    surfaceBase: "#0d0335",
+    surfaceRaised: "#16064a",
+    surfaceDark: "#08021f",
+    surfaceHover: "#23069866",
+
+    text: "#f7f4ff",
+    textAccent: "#d9d0fb",
+    textMuted: "#b6acd8",
+    textSubtle: "#8f76f4",
+    textHighlight: "#e8f9a4",
+    textAction: "#0d0335",
+
+    statusWarning: "#ff05cd",
+    statusError: "#ff5d7a",
+    statusOnline: "#07fdb3",
 } as const;
 
 export type Theme = typeof theme;

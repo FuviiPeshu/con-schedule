@@ -7,9 +7,28 @@ export const GlobalStyles = createGlobalStyle`
         box-sizing: border-box;
     }
 
+    html, body, #root {
+        min-height: 100%;
+    }
+
+    html, body {
+        height: 100%;
+    }
+
     body {
         margin: 0;
-        background-color: ${theme.background};
+        background: ${theme.surfaceBase};
         color: ${theme.text};
+        font-family: "Verdana", "Trebuchet MS", sans-serif;
+        line-height: 1.2;
+    }
+
+    button, input, select, textarea {
+        font: inherit;
+    }
+
+    ::selection {
+        background: ${theme.primaryAction};
+        color: ${theme.textAction};
     }
 `;

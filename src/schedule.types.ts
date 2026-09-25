@@ -20,3 +20,10 @@ export type FilterOption = {
 export type SelectFilterKey = Exclude<keyof ScheduleFilters, "search">;
 
 export type FilterOptions = Record<SelectFilterKey, FilterOption[]>;
+
+export enum FeedStateEnum {
+    Countdown = "Countdown",
+    Online = "Online",
+    Offline = "Offline",
+}
+export type FeedState = FeedStateEnum;

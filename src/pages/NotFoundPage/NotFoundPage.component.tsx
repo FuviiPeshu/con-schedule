@@ -1,8 +1,8 @@
-import { BackLink } from "./NotFoundPage.styled";
+import { BackLink, Page } from "./NotFoundPage.styled";
 
 export const NotFoundPage = () => (
-    <div>
+    <Page>
         <h1>Page not found</h1>
         <BackLink to="/">Back to schedule</BackLink>
-    </div>
+    </Page>
 );

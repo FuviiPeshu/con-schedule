@@ -2,6 +2,9 @@ import conConfig from "../config/schedule-config.json";
 
 export const conName = conConfig.name;
 export const conId = conConfig.identifier;
+export const conStart = conConfig.start ?? null;
+export const conEnd = conConfig.end ?? null;
+export const conNewDayEventStartTime = conConfig.newDayEventStartTime ?? "06:00";
 export const conTimeZone = conConfig.timeZone;
 
 export const useMocks = conConfig.useMocks;
