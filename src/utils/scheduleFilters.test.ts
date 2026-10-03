@@ -28,7 +28,7 @@ const withFilters = (filters: Partial<ScheduleFilters>): ScheduleFilters => ({
     ...filters,
 });
 
-describe("Utils / schedule filters", () => {
+describe("Utils / Schedule Filters", () => {
     it("should return only unique, sorted values and options", () => {
         expect(uniqueValues(["Room B", "", "Room A", "Room B"])).toEqual(["Room A", "Room B"]);
         expect(

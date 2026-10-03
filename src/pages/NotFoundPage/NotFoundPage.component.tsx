@@ -1,8 +1,26 @@
-import { BackLink, Page } from "./NotFoundPage.styled";
+import { useLocation } from "react-router-dom";
 
-export const NotFoundPage = () => (
-    <Page>
-        <h1>Page not found</h1>
-        <BackLink to="/">Back to schedule</BackLink>
-    </Page>
-);
+import { BackArrow, BackLink, Heading, Page } from "./NotFoundPage.styled";
+
+export const NotFoundPage = () => {
+    const location = useLocation();
+
+    const openedFromSchedule = location.state?.fromSchedule === true;
+
+    return (
+        <Page>
+            <BackLink
+                to={
+                    openedFromSchedule
+                        ? { pathname: "/", search: location.search }
+                        : { pathname: "/", search: "" }
+                }
+                state={openedFromSchedule ? { fromSchedule: true } : { resetSchedule: true }}
+            >
+                <BackArrow aria-hidden="true">&lt;</BackArrow>
+                Back to schedule
+            </BackLink>
+            <Heading>Page not found</Heading>
+        </Page>
+    );
+};

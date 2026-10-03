@@ -2,7 +2,7 @@ import { isWithinInterval } from "date-fns";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
 import { conNewDayEventStartTime, conTimeZone } from "../configuration";
-import { FeedState, FeedStateEnum } from "../schedule.types";
+import { EventState, FeedState } from "../schedule.types";
 
 /** Formats ISO event time in the configured local timezone */
 export const formatEventTime = (dateTimeIso: string): string =>
@@ -10,11 +10,18 @@ export const formatEventTime = (dateTimeIso: string): string =>
 
 /** Formats ISO event date in the configured local timezone */
 export const formatEventDate = (dateTimeIso: string): string =>
-    formatInTimeZone(new Date(dateTimeIso), conTimeZone, "EEEE, MMM d");
+    formatInTimeZone(new Date(dateTimeIso), conTimeZone, "EEEE, MMM d").replace(
+        / (?=\S+$)/,
+        "\u00A0"
+    );
 
 /** Formats a schedule day key into a readable local date string */
 export const formatScheduleDay = (dayKey: string): string =>
-    formatInTimeZone(fromZonedTime(`${dayKey}T12:00:00`, conTimeZone), conTimeZone, "EEEE, MMM d");
+    formatInTimeZone(
+        fromZonedTime(`${dayKey}T12:00:00`, conTimeZone),
+        conTimeZone,
+        "EEEE, MMM d"
+    ).replace(/ (?=\S+$)/, "\u00A0");
 
 /** Gets the total event time in minutes (from datetime string) */
 export const getEventLocalMinutes = (dateTimeIso: string): number => {
@@ -43,7 +50,7 @@ export const parseConventionDate = (date: string, endOfDay = false): Date =>
  * @param now Current datetime
  * @param startDate Start datetime of the feed (ISO string or null)
  * @param endDate End datetime of the feed (ISO string or null)
- * @returns The current feed state ("Countdown", "Online" or "Offline")
+ * @returns The current feed state ("Countdown", "Live" or "Archive")
  */
 export const getFeedState = (
     now: Date,
@@ -54,11 +61,11 @@ export const getFeedState = (
     const end = endDate ? parseConventionDate(endDate, true) : null;
 
     if (start && now < start) {
-        return FeedStateEnum.Countdown;
+        return FeedState.Countdown;
     } else if (end && now > end) {
-        return FeedStateEnum.Offline;
+        return FeedState.Archive;
     }
-    return FeedStateEnum.Online;
+    return FeedState.Live;
 };
 
 /**
@@ -150,4 +157,21 @@ export const isEventLive = (
         return false;
     }
     return isWithinInterval(now, { start: new Date(startIso), end: new Date(endIso) });
+};
+
+/**
+ * Determines state of an event based on its start and end datetimes
+ * @param start Start datetime of the event (ISO string or null)
+ * @param end End datetime of the event (ISO string or null)
+ * @returns Current state of the event (EventState - Live, Upcoming, Finished or Unknown)
+ */
+export const getEventState = (start: string | null, end: string | null): EventState => {
+    if (isEventLive(start, end)) {
+        return EventState.Live;
+    } else if (start && new Date(start).getTime() > Date.now()) {
+        return EventState.Upcoming;
+    } else if (end && new Date(end).getTime() < Date.now()) {
+        return EventState.Finished;
+    }
+    return EventState.Unknown;
 };

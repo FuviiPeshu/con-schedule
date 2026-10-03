@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { EventState } from "../schedule.types";
 import {
     formatCountdown,
     formatEventDuration,
     formatEventTime,
+    getEventState,
     getFeedState,
     getScheduleDayKey,
     getScheduleMinuteOffset,
@@ -21,10 +23,10 @@ describe("Utils / Header Helpers (convention lifecycle utils)", () => {
             "Countdown"
         );
         expect(getFeedState(new Date("2027-08-18T00:00:00Z"), "2027-08-18", "2027-08-22")).toBe(
-            "Online"
+            "Live"
         );
         expect(getFeedState(new Date("2027-08-22T22:00:01Z"), "2027-08-18", "2027-08-22")).toBe(
-            "Offline"
+            "Archive"
         );
     });
 
@@ -105,9 +107,57 @@ describe("Utils / isEventLive", () => {
     });
 
     it("should return 'false' when either range time is missing", () => {
-        const now = new Date("2026-08-20T16:30:00+02:00");
+        const nowMock = new Date("2026-08-20T16:30:00+02:00");
 
-        expect(isEventLive(null, end, now)).toBe(false);
-        expect(isEventLive(start, null, now)).toBe(false);
+        expect(isEventLive(null, end, nowMock)).toBe(false);
+        expect(isEventLive(start, null, nowMock)).toBe(false);
+    });
+});
+
+describe("Utils / getEventState", () => {
+    const nowMock = new Date("2026-08-20T16:30:00+02:00");
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(nowMock);
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it("should return Live while an event is in progress", () => {
+        expect(getEventState("2026-08-20T16:00:00+02:00", "2026-08-20T17:00:00+02:00")).toBe(
+            EventState.Live
+        );
+    });
+
+    it("should treat event start and end boundaries as live", () => {
+        const start = "2026-08-20T16:00:00+02:00";
+        const end = "2026-08-20T17:00:00+02:00";
+
+        vi.setSystemTime(new Date(start));
+        expect(getEventState(start, end)).toBe(EventState.Live);
+
+        vi.setSystemTime(new Date(end));
+        expect(getEventState(start, end)).toBe(EventState.Live);
+    });
+
+    it("should return Upcoming before an event starts", () => {
+        expect(getEventState("2026-08-20T17:00:00+02:00", "2026-08-20T18:00:00+02:00")).toBe(
+            EventState.Upcoming
+        );
+    });
+
+    it("should return Finished after an event ends", () => {
+        expect(getEventState("2026-08-20T14:00:00+02:00", "2026-08-20T16:00:00+02:00")).toBe(
+            EventState.Finished
+        );
+    });
+
+    it("should return Unknown when the event range is incomplete", () => {
+        expect(getEventState(null, null)).toBe(EventState.Unknown);
+        expect(getEventState("2026-08-20T16:00:00+02:00", null)).toBe(EventState.Unknown);
+        expect(getEventState(null, "2026-08-20T17:00:00+02:00")).toBe(EventState.Unknown);
     });
 });

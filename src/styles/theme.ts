@@ -1,30 +1,38 @@
+// import { themeEF31 } from "./themeEF31";
+
 export const themeCommon = {
     white: "#ffffff",
     black: "#000000",
 };
 
+export const themeBase = {
+    ...themeCommon,
+
+    primary: "#00504a",
+    primaryDeep: "#00504a",
+    primaryAction: "#ffd700",
+    primaryAccent: "#7faca9",
+
+    surfaceBase: "#262c2c",
+    surfaceRaised: "#262c2c",
+    surfaceDark: "#000000",
+    surfaceHover: "#404f4f40",
+
+    text: "#e5eeed",
+    textAccent: "#D4DBDA",
+    textMuted: "#D4DBDA",
+    textSubtle: "#7faca9",
+    textHighlight: "#ffd700",
+    textAction: "#001a18",
+
+    statusWarning: "#ee5e22",
+    statusError: "#b21542",
+    statusGood: "#00504a",
+} as const;
+export type Theme = Record<keyof typeof themeBase, string>;
+
 export const theme = {
     ...themeCommon,
-    primary: "#4011f4",
-    primaryDeep: "#230698",
-    primaryAction: "#c5f411",
-    primaryAccent: "#07fdb3",
-
-    surfaceBase: "#0d0335",
-    surfaceRaised: "#16064a",
-    surfaceDark: "#08021f",
-    surfaceHover: "#23069866",
-
-    text: "#f7f4ff",
-    textAccent: "#d9d0fb",
-    textMuted: "#b6acd8",
-    textSubtle: "#8f76f4",
-    textHighlight: "#e8f9a4",
-    textAction: "#0d0335",
-
-    statusWarning: "#ff05cd",
-    statusError: "#ff5d7a",
-    statusOnline: "#07fdb3",
-} as const;
-
-export type Theme = typeof theme;
+    ...themeBase,
+    // ...themeEF31,
+};

@@ -2,8 +2,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { FilterInputComponent } from "./FilterInput.components";
-import { FilterSelectComponent } from "./FilterSelect.components";
+import { FilterInputComponent } from "./FilterInput.component";
+import { FilterSelectComponent } from "./FilterSelect.component";
 
 describe("Components / FilterInputComponent", () => {
     it("should render configured input and handle its value change", async () => {

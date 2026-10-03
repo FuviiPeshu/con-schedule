@@ -1,25 +1,37 @@
-import { BrowserRouter } from "react-router-dom";
+import { MemoryRouter } from "react-router-dom";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { EXAMPLE_EVENT_MOCK_DATA } from "../../__mocks__/schedule.mocks";
-import { EventCard } from "./EventCard.component";
+import { EventCardComponent } from "./EventCard.component";
 
 describe("Components / EventCard", () => {
-    const renderCard = () =>
+    const renderCard = (initialEntry = "/") =>
         render(
-            <BrowserRouter>
-                <EventCard event={EXAMPLE_EVENT_MOCK_DATA} />
-            </BrowserRouter>
+            <MemoryRouter initialEntries={[initialEntry]}>
+                <EventCardComponent event={EXAMPLE_EVENT_MOCK_DATA} />
+            </MemoryRouter>
         );
 
     it("should render event title and description", () => {
         renderCard();
 
         expect(screen.getByText(EXAMPLE_EVENT_MOCK_DATA.title)).toBeInTheDocument();
-        expect(screen.getByText(EXAMPLE_EVENT_MOCK_DATA.description)).toBeInTheDocument();
+        expect(screen.getByText(EXAMPLE_EVENT_MOCK_DATA.raw_description)).toBeInTheDocument();
+        expect(screen.getByText("(30m)")).toBeInTheDocument();
+        expect(screen.getByText(EXAMPLE_EVENT_MOCK_DATA.room.name)).toBeInTheDocument();
+        expect(screen.queryByText(EXAMPLE_EVENT_MOCK_DATA.track.name)).not.toBeInTheDocument();
         expect(
-            screen.getByRole("link", { name: new RegExp(EXAMPLE_EVENT_MOCK_DATA.title) })
-        ).toHaveAttribute("href", `/event/${EXAMPLE_EVENT_MOCK_DATA.id}`);
+            screen.queryByText(`Specimen / ${EXAMPLE_EVENT_MOCK_DATA.code}`)
+        ).not.toBeInTheDocument();
+    });
+
+    it("should preserve schedule query state when opening an event", () => {
+        renderCard("/?room=Auditorium&page=2");
+
+        expect(screen.getByRole("link")).toHaveAttribute(
+            "href",
+            "/event/621?room=Auditorium&page=2"
+        );
     });
 });

@@ -44,6 +44,7 @@ export const getFilterOptions = (events: EventSlot[]): FilterOptions => ({
             event.speakers.map((speaker) => ({ value: speaker.code, label: speaker.name }))
         )
     ),
+    search: valuesToOptions(events.map((event) => getEventSearchText(event))),
 });
 
 /** Gets the date of the event in YYYY-MM-DD format */

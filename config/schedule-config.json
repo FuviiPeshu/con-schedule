@@ -1,8 +1,9 @@
 {
     "name": "Eurofurence",
     "identifier": "EF30",
-    "start": "2027-08-18",
-    "end": "2027-08-22",
+    "theme": "Fantastic Furry Festival",
+    "start": "2026-08-19",
+    "end": "2026-08-23",
     "newDayEventStartTime": "06:00",
     "timeZone": "Europe/Berlin",
     "useMocks": true,
