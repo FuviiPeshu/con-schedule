@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { css, styled } from "styled-components";
 
 import { theme } from "../../styles/theme";
-import { gridCellHeight, gridHalfCellHeight } from "./CalendarView.component";
+import { gridHalfCellHeight } from "./CalendarView.component";
 
 type ButtonStateProps = { $active: boolean; $disabled: boolean };
 

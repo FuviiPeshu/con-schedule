@@ -16,6 +16,7 @@ export const apiBase = import.meta.env.DEV ? "/schedule-api" : conConfig.apiUrl;
 
 // App behaviour configuration
 export const syncIntervalMs = 5 * 60 * 1000; // how often the schedule is re-fetched from the API
+export const storagePrefix = `con-schedule:${conId}`;
 export const inputDebounceMs = 128;
 export const pageSizeOptions = [5, 10, 20, 50, 100] as const;
 export const defaultPageSize: PageSize = 10;

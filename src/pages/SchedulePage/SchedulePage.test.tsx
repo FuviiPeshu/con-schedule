@@ -133,9 +133,7 @@ describe("Pages / SchedulePage", () => {
 
         await user.click(screen.getByTitle("ROOM: Fursuit Lounge"));
         expect(screen.getByRole("button", { name: "Remove room filter" })).toBeInTheDocument();
-        expect(
-            screen.getByRole("button", { name: "Remove room filter" })
-        ).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Remove room filter" })).toBeInTheDocument();
 
         await user.click(screen.getByRole("button", { name: "Remove room filter" }));
         expect(screen.queryByTitle("ROOM: Fursuit Lounge")).not.toBeInTheDocument();
@@ -279,12 +277,12 @@ describe("Pages / SchedulePage", () => {
         await user.click(screen.getByRole("button", { name: "Calendar" }));
         params = new URLSearchParams(window.location.search);
         expect(params.get("room")).toBe("Fursuit Lounge");
-        expect(params.get("day")).toBe("2026-08-21");
+        expect(params.get("date")).toBe("2026-08-21");
         expect(params.has("page")).toBe(false);
 
         await user.click(screen.getByRole("button", { name: "List" }));
         params = new URLSearchParams(window.location.search);
-        expect(params.has("day")).toBe(false);
+        expect(params.has("date")).toBe(false);
         expect(params.get("page")).toBe("1");
     });
 
@@ -304,7 +302,7 @@ describe("Pages / SchedulePage", () => {
 
     it("should restore calendar view and selected day from a direct URL", async () => {
         window.localStorage.setItem("con-schedule:EF30:view", JSON.stringify("list"));
-        window.history.replaceState({}, "", "/?day=2026-08-21");
+        window.history.replaceState({}, "", "/?date=2026-08-21");
 
         renderPage();
 
@@ -328,14 +326,14 @@ describe("Pages / SchedulePage", () => {
             isLoading: true,
             isError: false,
         } as ReturnType<typeof useSchedule>);
-        window.history.replaceState({}, "", "/?day=2026-08-21");
+        window.history.replaceState({}, "", "/?date=2026-08-21");
         schedule.rerender(
             <BrowserRouter>
                 <SchedulePage />
             </BrowserRouter>
         );
 
-        expect(window.location.search).toBe("?day=2026-08-21");
+        expect(window.location.search).toBe("?date=2026-08-21");
     });
 
     it("should filter event fields and can reset the search", async () => {

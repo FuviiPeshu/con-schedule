@@ -1,9 +1,10 @@
 import { FC, useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 
 import type { EventSlot } from "../../api";
 import { conId } from "../../configuration";
-import type { CalendarDay } from "../../schedule.types";
+import { useCalendarSchedule } from "../../hooks/useCalendarSchedule";
+import type { ScheduleFilters } from "../../schedule.types";
 import { formatEventDuration, formatEventTime } from "../../utils/dateTime.utils";
 import {
     eventOverlapsScheduleDay,
@@ -54,20 +55,30 @@ const hiddenRoomsStorageKey = `con-schedule:${conId}:calendar:hidden-rooms`;
 const horizontalScrollStorageKey = `con-schedule:${conId}:calendar:scroll-x`;
 
 interface CalendarViewProps {
-    days: CalendarDay[];
     events: EventSlot[];
-    selectedDay: string;
-    disabledDays: ReadonlySet<string>;
-    onDayChange: (day: string) => void;
+    filteredEvents: EventSlot[];
+    filters: ScheduleFilters;
+    appliedFilters: ScheduleFilters;
+    updateSearchParams: (update: (params: URLSearchParams) => void) => void;
 }
 
 export const CalendarViewComponent: FC<CalendarViewProps> = ({
-    days,
     events,
-    selectedDay,
-    disabledDays,
-    onDayChange,
+    filteredEvents,
+    filters,
+    appliedFilters,
+    updateSearchParams,
 }) => {
+    const [searchParams] = useSearchParams();
+    const { calendarDays, disabledCalendarDays, activeDay, setSelectedDay } = useCalendarSchedule({
+        events,
+        filteredEvents,
+        filters,
+        appliedFilters,
+        selectedDay: searchParams.get("date") ?? "",
+        updateSearchParams,
+    });
+
     const [hiddenRooms, setHiddenRooms] = useState<string[]>(() =>
         readStoredValue<string[]>(hiddenRoomsStorageKey, [])
     );
@@ -77,17 +88,20 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
     const viewportRef = useRef<HTMLDivElement>(null);
     const horizontalScrollRef = useRef<HTMLDivElement>(null);
     const roomHeaderRef = useRef<HTMLDivElement>(null);
-    const allRooms = useMemo(() => getCalendarRooms(events, selectedDay), [events, selectedDay]);
+    const allRooms = useMemo(
+        () => getCalendarRooms(filteredEvents, activeDay),
+        [activeDay, filteredEvents]
+    );
 
     const rooms = allRooms.filter((room) => !hiddenRooms.includes(room.value));
     const hiddenRoomDetails = allRooms.filter((room) => hiddenRooms.includes(room.value));
     const gridRooms = getCalendarGridRooms(rooms, availableWidth);
-    const dayEvents = events.filter(
+    const dayEvents = filteredEvents.filter(
         (event) =>
-            eventOverlapsScheduleDay(event, selectedDay) &&
+            eventOverlapsScheduleDay(event, activeDay) &&
             rooms.some((room) => room.value === event.room.name)
     );
-    const positionedEvents = getPositionedEvents(events, selectedDay, rooms);
+    const positionedEvents = getPositionedEvents(filteredEvents, activeDay, rooms);
     const minEventStart = positionedEvents.length
         ? Math.min(...positionedEvents.map((event) => event.startMinute))
         : 0;
@@ -142,7 +156,7 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
 
     useEffect(() => {
         syncHorizontalScroll(readStoredValue(horizontalScrollStorageKey, 0));
-    }, [availableWidth, selectedDay]);
+    }, [availableWidth, activeDay]);
 
     useEffect(() => {
         writeStoredValue(hiddenRoomsStorageKey, hiddenRooms);
@@ -170,20 +184,20 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
     return (
         <CalendarViewWrapper>
             <CalendarDaySelector role="tablist" aria-label="Schedule days">
-                {days.map((day) => {
-                    const isDisabled = disabledDays.has(day.value);
+                {calendarDays.map((day) => {
+                    const isDisabled = disabledCalendarDays.has(day.value);
 
                     return (
                         <CalendarDayButton
-                            $active={day.value === selectedDay}
+                            $active={day.value === activeDay}
                             $disabled={isDisabled}
                             key={day.value}
                             type="button"
                             role="tab"
-                            aria-selected={day.value === selectedDay}
+                            aria-selected={day.value === activeDay}
                             aria-disabled={isDisabled}
                             disabled={isDisabled}
-                            onClick={() => onDayChange(day.value)}
+                            onClick={() => setSelectedDay(day.value)}
                         >
                             <CalendarDayLabel>{day.label}</CalendarDayLabel>
                             <span>{day.eventsCount} events</span>
