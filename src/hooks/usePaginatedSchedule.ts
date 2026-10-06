@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 
-import type { EventSlot } from "../api";
 import { defaultPageSize, pageSizeOptions, storagePrefix } from "../configuration";
 import type { PageSize } from "../schedule.types";
 import { readStoredValue, writeStoredValue } from "../utils/storage.utils";
@@ -12,19 +11,19 @@ const parsePage = (value: string | number | null): number => {
     return Number.isInteger(page) && page > 0 ? page : 1;
 };
 
-interface UsePaginatedScheduleParams {
-    events: EventSlot[];
+interface UsePaginatedScheduleParams<T> {
+    items: T[];
     searchParams: URLSearchParams;
     updateSearchParams: (update: (params: URLSearchParams) => void) => void;
     scheduleContentRef: React.RefObject<HTMLDivElement | null>;
 }
 
-export const usePaginatedSchedule = ({
-    events,
+export const usePaginatedSchedule = <T>({
+    items,
     searchParams,
     updateSearchParams,
     scheduleContentRef,
-}: UsePaginatedScheduleParams) => {
+}: UsePaginatedScheduleParams<T>) => {
     const [pageSize, setPageSize] = useState<PageSize>(() => {
         const storedPageSize = readStoredValue<number>(pageSizeStorageKey, defaultPageSize);
 
@@ -34,15 +33,16 @@ export const usePaginatedSchedule = ({
     });
 
     const currentPageFromParams = parsePage(searchParams.get("page"));
-    const totalPages = Math.max(1, Math.ceil(events.length / pageSize));
+    const totalItems = items.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
     const currentPage = Math.min(currentPageFromParams, totalPages);
     const pageStartIndex = (currentPage - 1) * pageSize;
-    const eventsOnPage = useMemo(
-        () => events.slice(pageStartIndex, pageStartIndex + pageSize),
-        [events, pageSize, pageStartIndex]
+    const itemsOnPage = useMemo(
+        () => items.slice(pageStartIndex, pageStartIndex + pageSize),
+        [items, pageSize, pageStartIndex]
     );
-    const pageStart = events.length === 0 ? 0 : pageStartIndex + 1;
-    const pageEnd = Math.min(pageStartIndex + pageSize, events.length);
+    const pageStart = totalItems === 0 ? 0 : pageStartIndex + 1;
+    const pageEnd = Math.min(pageStartIndex + pageSize, totalItems);
 
     useEffect(() => {
         writeStoredValue(pageSizeStorageKey, pageSize);
@@ -71,9 +71,10 @@ export const usePaginatedSchedule = ({
     return {
         pageSize,
         pageSizeOptions,
+        totalItems,
         totalPages,
         currentPage,
-        eventsOnPage,
+        itemsOnPage,
         pageStart,
         pageEnd,
         goToPage,

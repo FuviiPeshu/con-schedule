@@ -91,14 +91,20 @@ export const getCalendarGridRooms = (
     rooms: CalendarRoom[],
     availableWidth: number
 ): CalendarRoom[] => {
+    const availableRoomWidth = Math.max(0, availableWidth - timeColumnWidth);
     const minimumGridRoomCount = Math.max(
         rooms.length,
-        Math.max(1, Math.floor(Math.max(0, availableWidth - timeColumnWidth) / roomColumnMinWidth))
+        Math.max(1, Math.ceil(availableRoomWidth / roomColumnMinWidth))
     );
+    const hasRoomRemainder = availableWidth > timeColumnWidth + rooms.length * roomColumnMinWidth;
+    const placeholderCount =
+        minimumGridRoomCount -
+        rooms.length +
+        (minimumGridRoomCount === rooms.length && hasRoomRemainder ? 1 : 0);
 
     return [
         ...rooms,
-        ...Array.from({ length: minimumGridRoomCount - rooms.length }, (_, index) => ({
+        ...Array.from({ length: placeholderCount }, (_, index) => ({
             value: `__empty-room-${index}`,
             label: "",
             placeholder: true,

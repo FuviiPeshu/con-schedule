@@ -57,6 +57,18 @@ export const ScheduleView = {
 } as const;
 export type ScheduleView = (typeof ScheduleView)[keyof typeof ScheduleView];
 
+export const ListDisplayMode = {
+    Full: "full",
+    Compact: "compact",
+} as const;
+export type ListDisplayMode = (typeof ListDisplayMode)[keyof typeof ListDisplayMode];
+
+export const CalendarOrientation = {
+    Rooms: "rooms",
+    Times: "times",
+} as const;
+export type CalendarOrientation = (typeof CalendarOrientation)[keyof typeof CalendarOrientation];
+
 export const FeedState = {
     Countdown: "Countdown",
     Live: "Live",

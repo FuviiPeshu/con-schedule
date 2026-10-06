@@ -4,11 +4,16 @@ import { useLocation, useSearchParams } from "react-router-dom";
 import { CalendarViewComponent } from "../../components/CalendarView";
 import { ListViewComponent } from "../../components/ListView";
 import { ScheduleFiltersPanel } from "../../components/ScheduleFiltersPanel";
-import { conId, conName, inputDebounceMs, storagePrefix } from "../../configuration";
+import { inputDebounceMs, storagePrefix } from "../../configuration";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useSchedule } from "../../hooks/useSchedule";
 import { useScheduleScroll } from "../../hooks/useScheduleScroll";
-import { ScheduleFilters, ScheduleView } from "../../schedule.types";
+import {
+    CalendarOrientation,
+    ListDisplayMode,
+    ScheduleFilters,
+    ScheduleView,
+} from "../../schedule.types";
 import { getCalendarDays } from "../../utils/scheduleEvents.utils";
 import {
     emptyFilters,
@@ -18,9 +23,7 @@ import {
 import { readStoredValue, writeStoredValue } from "../../utils/storage.utils";
 import {
     ErrorBanner,
-    PageBreadcrumbsWrapper,
     PageHeader,
-    PageHeaderNavigationBar,
     PageSummary,
     PageTitle,
     PageTitleAccent,
@@ -28,6 +31,9 @@ import {
     ScheduleContent,
     SchedulePageShell,
     StatusText,
+    ViewControls,
+    ViewOptionCheckbox,
+    ViewOptionCheckboxInput,
     ViewToggleButton,
     ViewToggleContainer,
 } from "./SchedulePage.styled";
@@ -37,7 +43,17 @@ const storageKeys = {
     filtersOpen: `${storagePrefix}:filters-open`,
     listScrollY: `${storagePrefix}:scroll-y:list`,
     calendarScrollY: `${storagePrefix}:scroll-y:calendar`,
+    listDisplayMode: `${storagePrefix}:list-display-mode`,
+    calendarOrientation: `${storagePrefix}:calendar-orientation`,
 } as const;
+
+const readStoredOption = <T extends string>(key: string, fallback: T, options: readonly T[]): T => {
+    const storedValue = readStoredValue<unknown>(key, fallback);
+
+    return typeof storedValue === "string" && options.includes(storedValue as T)
+        ? (storedValue as T)
+        : fallback;
+};
 
 export const SchedulePage = () => {
     const [verticalScrollbarWidth, setVerticalScrollbarWidth] = useState(0);
@@ -48,6 +64,20 @@ export const SchedulePage = () => {
         const storedView = readStoredValue<ScheduleView>(storageKeys.view, ScheduleView.List);
         return Object.values(ScheduleView).includes(storedView) ? storedView : ScheduleView.List;
     });
+    const [listDisplayMode, setListDisplayMode] = useState<ListDisplayMode>(() =>
+        readStoredOption(
+            storageKeys.listDisplayMode,
+            ListDisplayMode.Full,
+            Object.values(ListDisplayMode)
+        )
+    );
+    const [calendarOrientation, setCalendarOrientation] = useState<CalendarOrientation>(() =>
+        readStoredOption(
+            storageKeys.calendarOrientation,
+            CalendarOrientation.Rooms,
+            Object.values(CalendarOrientation)
+        )
+    );
 
     const location = useLocation();
     const { data, isLoading, isError } = useSchedule();
@@ -124,6 +154,14 @@ export const SchedulePage = () => {
     useEffect(() => {
         writeStoredValue(storageKeys.view, activeScheduleView);
     }, [activeScheduleView]);
+
+    useEffect(() => {
+        writeStoredValue(storageKeys.listDisplayMode, listDisplayMode);
+    }, [listDisplayMode]);
+
+    useEffect(() => {
+        writeStoredValue(storageKeys.calendarOrientation, calendarOrientation);
+    }, [calendarOrientation]);
 
     useEffect(() => {
         if (typeof window.matchMedia !== "function") {
@@ -237,11 +275,14 @@ export const SchedulePage = () => {
                 <ScheduleBody $calendarMode={activeScheduleView === ScheduleView.Calendar}>
                     {isError && <ErrorBanner>Error occured, showing mock data.</ErrorBanner>}
                     <PageHeader $calendarMode={activeScheduleView === ScheduleView.Calendar}>
-                        <PageHeaderNavigationBar>
-                            <PageBreadcrumbsWrapper>
-                                {conName} / {conId}
-                            </PageBreadcrumbsWrapper>
-                            <ViewToggleContainer aria-label="Schedule view">
+                        <div>
+                            <PageTitle>
+                                Event <PageTitleAccent>schedule</PageTitleAccent>
+                            </PageTitle>
+                            <PageSummary>All times shown in convention local time.</PageSummary>
+                        </div>
+                        <ViewControls>
+                            <ViewToggleContainer role="group" aria-label="Schedule view">
                                 <ViewToggleButton
                                     type="button"
                                     $active={activeScheduleView === ScheduleView.List}
@@ -259,13 +300,23 @@ export const SchedulePage = () => {
                                     Calendar
                                 </ViewToggleButton>
                             </ViewToggleContainer>
-                        </PageHeaderNavigationBar>
-                        <div>
-                            <PageTitle>
-                                Event <PageTitleAccent>schedule</PageTitleAccent>
-                            </PageTitle>
-                            <PageSummary>All times shown in convention local time.</PageSummary>
-                        </div>
+                            {activeScheduleView === ScheduleView.List && (
+                                <ViewOptionCheckbox>
+                                    <ViewOptionCheckboxInput
+                                        type="checkbox"
+                                        checked={listDisplayMode === ListDisplayMode.Compact}
+                                        onChange={(event) =>
+                                            setListDisplayMode(
+                                                event.target.checked
+                                                    ? ListDisplayMode.Compact
+                                                    : ListDisplayMode.Full
+                                            )
+                                        }
+                                    />
+                                    Compact view
+                                </ViewOptionCheckbox>
+                            )}
+                        </ViewControls>
                     </PageHeader>
                     {activeScheduleView === ScheduleView.Calendar ? (
                         <CalendarViewComponent
@@ -274,6 +325,8 @@ export const SchedulePage = () => {
                             filters={filters}
                             appliedFilters={appliedFilters}
                             updateSearchParams={updateSearchParams}
+                            orientation={calendarOrientation}
+                            onOrientationChange={setCalendarOrientation}
                         />
                     ) : (
                         <ListViewComponent
@@ -281,6 +334,7 @@ export const SchedulePage = () => {
                             filteredEvents={filteredEvents}
                             scheduleContentRef={scheduleContentRef}
                             updateSearchParams={updateSearchParams}
+                            displayMode={listDisplayMode}
                         />
                     )}
                 </ScheduleBody>

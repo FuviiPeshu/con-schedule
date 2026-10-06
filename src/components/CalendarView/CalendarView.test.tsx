@@ -79,6 +79,16 @@ describe("Components / CalendarView", () => {
         ]);
     });
 
+    it("should add placeholder columns to fill a partial calendar width", () => {
+        const rooms = getCalendarRooms([EXAMPLE_EVENT_MOCK_DATA], "2026-08-20");
+
+        expect(getCalendarGridRooms(rooms, 600).map((room) => room.value)).toEqual([
+            "Auditorium",
+            "__empty-room-0",
+            "__empty-room-1",
+        ]);
+    });
+
     it("should expose unique selectable days in event order", () => {
         const days = getCalendarDays([
             EXAMPLE_EVENT_MOCK_DATA,

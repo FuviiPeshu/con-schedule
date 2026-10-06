@@ -52,6 +52,48 @@ describe("Pages / SchedulePage", () => {
             ],
         })),
     });
+    const sameStartScheduleData = buildScheduleData({
+        ...SCHEDULE_MOCK_DATA,
+        days: [
+            {
+                ...SCHEDULE_MOCK_DATA.days[0],
+                slots: [
+                    SCHEDULE_MOCK_DATA.days[0].slots[0],
+                    {
+                        ...SCHEDULE_MOCK_DATA.days[0].slots[0],
+                        id: 1001,
+                        title: "Second same-start event",
+                        room: { id: 2, name: "Second Room" },
+                    },
+                ],
+            },
+        ],
+    });
+    const compactPaginationScheduleData = buildScheduleData({
+        ...SCHEDULE_MOCK_DATA,
+        days: [
+            {
+                ...SCHEDULE_MOCK_DATA.days[0],
+                slots: [
+                    SCHEDULE_MOCK_DATA.days[0].slots[0],
+                    {
+                        ...SCHEDULE_MOCK_DATA.days[0].slots[0],
+                        id: 1001,
+                        title: "Second same-start event",
+                        room: { id: 2, name: "Second Room" },
+                    },
+                    ...Array.from({ length: 5 }, (_, index) => ({
+                        ...SCHEDULE_MOCK_DATA.days[0].slots[0],
+                        id: 1100 + index,
+                        title: `Compact row event ${index + 1}`,
+                        start: `2026-08-20T${String(17 + index).padStart(2, "0")}:00:00+02:00`,
+                        end: `2026-08-20T${String(17 + index).padStart(2, "0")}:30:00+02:00`,
+                        duration: 30,
+                    })),
+                ],
+            },
+        ],
+    });
 
     const renderPage = () =>
         render(
@@ -202,6 +244,44 @@ describe("Pages / SchedulePage", () => {
         expect(screen.getByText("Pagination event 1")).toBeInTheDocument();
     });
 
+    it("should group same-start events in compact list mode", async () => {
+        const user = userEvent.setup();
+        mockedUseSchedule.mockReturnValue({
+            data: sameStartScheduleData,
+            isLoading: false,
+            isError: false,
+        } as ReturnType<typeof useSchedule>);
+
+        renderPage();
+
+        await user.click(screen.getByRole("checkbox", { name: "Compact view" }));
+
+        const compactList = screen.getByRole("group", { name: "Compact event list" });
+        expect(compactList).toBeInTheDocument();
+        expect(screen.getByText("16:50")).toBeInTheDocument();
+        expect(screen.getByText("Opening Ceremony")).toBeInTheDocument();
+        expect(screen.getByText("Second same-start event")).toBeInTheDocument();
+        expect(screen.getByRole("checkbox", { name: "Compact view" })).toBeChecked();
+    });
+
+    it("should paginate compact mode by event-time rows", async () => {
+        const user = userEvent.setup();
+        mockedUseSchedule.mockReturnValue({
+            data: compactPaginationScheduleData,
+            isLoading: false,
+            isError: false,
+        } as ReturnType<typeof useSchedule>);
+
+        renderPage();
+
+        await user.click(screen.getByRole("checkbox", { name: "Compact view" }));
+        await user.selectOptions(screen.getByRole("combobox", { name: "Page size (top)" }), "5");
+
+        expect(screen.getAllByText("Showing 1-5 / 6 rows")).toHaveLength(2);
+        expect(screen.getByText("Compact row event 4")).toBeInTheDocument();
+        expect(screen.queryByText("Compact row event 5")).not.toBeInTheDocument();
+    });
+
     it("should switch to a day grid view", async () => {
         const user = userEvent.setup();
 
@@ -223,6 +303,19 @@ describe("Pages / SchedulePage", () => {
 
         expect(screen.getByRole("link", { name: /Fursuit Lounge - Fri/ })).toBeInTheDocument();
         expect(screen.queryByRole("link", { name: /Opening Ceremony/ })).not.toBeInTheDocument();
+    });
+
+    it("should swap calendar orientation to time columns", async () => {
+        const user = userEvent.setup();
+
+        renderPage();
+
+        await user.click(screen.getByRole("button", { name: "Calendar" }));
+        await user.click(screen.getByRole("button", { name: "Swap columns and rows" }));
+
+        expect(screen.getByRole("button", { name: "Swap columns and rows" })).toBeInTheDocument();
+        expect(screen.queryByText("Rooms / time")).not.toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /Opening Ceremony/ })).toBeInTheDocument();
     });
 
     it("should select the date-filtered day when entering the day grid", async () => {

@@ -6,6 +6,33 @@ export const ListViewPanel = styled.section``;
 
 export const EventList = styled.div``;
 
+export const CompactEventRows = styled.div`
+    display: grid;
+    gap: 8px;
+`;
+
+export const CompactEventRow = styled.div`
+    display: grid;
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 4px;
+    align-items: stretch;
+    min-width: 0;
+    padding: 8px 0;
+`;
+
+export const CompactEventTime = styled.time`
+    color: ${theme.primaryAction};
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+`;
+
+export const CompactEventItems = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+`;
+
 export const DayMarker = styled.div`
     display: flex;
     align-items: center;

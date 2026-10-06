@@ -4,7 +4,8 @@ import { useLocation, useSearchParams } from "react-router-dom";
 import type { EventSlot } from "../../api";
 import { conId } from "../../configuration";
 import { useCalendarSchedule } from "../../hooks/useCalendarSchedule";
-import type { ScheduleFilters } from "../../schedule.types";
+import { CalendarOrientation } from "../../schedule.types";
+import type { PositionedEvent, ScheduleFilters } from "../../schedule.types";
 import { formatEventDuration, formatEventTime } from "../../utils/dateTime.utils";
 import {
     eventOverlapsScheduleDay,
@@ -24,23 +25,28 @@ import {
     CalendarEventMeta,
     CalendarEventTime,
     CalendarEventTitle,
+    CalendarGridHours,
+    CalendarGridLane,
+    CalendarGridRoomLabel,
+    CalendarGridRoomLabelColumn,
     CalendarHiddenRoom,
     CalendarHorizontalScroll,
     CalendarHorizontalScrollContent,
     CalendarHourLabel,
     CalendarHourLine,
-    CalendarHours,
-    CalendarLane,
+    CalendarOrientationArrow,
+    CalendarOrientationButton,
     CalendarRoomControls,
     CalendarRoomControlsLabel,
-    CalendarRoomCorner,
     CalendarRoomDivider,
     CalendarRoomHeader,
     CalendarRoomHeaderViewport,
     CalendarRoomHide,
     CalendarRoomLabel,
     CalendarScrollViewport,
-    CalendarTimeline,
+    CalendarTimeGridHeaderLabel,
+    CalendarTimeGridHeaderTimeline,
+    CalendarTimeGridLine,
     CalendarViewport,
     CalendarViewWrapper,
 } from "./CalendarView.styled";
@@ -51,8 +57,42 @@ export const roomColumnMinWidth = 256;
 export const timeColumnWidth = 80;
 export const gridEventMargin = 2;
 export const minimumTimelineMinutes = 16 * 60;
+export const calendarHalfHourWidth = 72;
+export const calendarRoomRowHeight = 112;
+export const calendarRoomLabelWidth = 176;
 const hiddenRoomsStorageKey = `con-schedule:${conId}:calendar:hidden-rooms`;
 const horizontalScrollStorageKey = `con-schedule:${conId}:calendar:scroll-x`;
+
+type CalendarEventLayout = {
+    top: number;
+    height: number;
+    left: number;
+    width: number;
+};
+
+type CalendarEventLinkProps = {
+    event: EventSlot;
+    layout: CalendarEventLayout;
+    search: string;
+};
+
+const CalendarEventLink = ({ event, layout, search }: CalendarEventLinkProps) => (
+    <CalendarEvent
+        $trackColor={event.track.color}
+        $top={layout.top}
+        $height={layout.height}
+        $left={layout.left}
+        $width={layout.width}
+        to={{ pathname: `/event/${event.id}`, search }}
+        state={{ fromSchedule: true }}
+    >
+        <CalendarEventTime>{event.start ? formatEventTime(event.start) : "TBD"}</CalendarEventTime>
+        <CalendarEventTitle>{event.title}</CalendarEventTitle>
+        <CalendarEventMeta>
+            {event.room.name} / {formatEventDuration(event.duration)}
+        </CalendarEventMeta>
+    </CalendarEvent>
+);
 
 interface CalendarViewProps {
     events: EventSlot[];
@@ -60,6 +100,8 @@ interface CalendarViewProps {
     filters: ScheduleFilters;
     appliedFilters: ScheduleFilters;
     updateSearchParams: (update: (params: URLSearchParams) => void) => void;
+    orientation: CalendarOrientation;
+    onOrientationChange: (orientation: CalendarOrientation) => void;
 }
 
 export const CalendarViewComponent: FC<CalendarViewProps> = ({
@@ -68,6 +110,8 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
     filters,
     appliedFilters,
     updateSearchParams,
+    orientation,
+    onOrientationChange,
 }) => {
     const [searchParams] = useSearchParams();
     const { calendarDays, disabledCalendarDays, activeDay, setSelectedDay } = useCalendarSchedule({
@@ -83,6 +127,7 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
         readStoredValue<string[]>(hiddenRoomsStorageKey, [])
     );
     const [availableWidth, setAvailableWidth] = useState(0);
+    const [availableHeight, setAvailableHeight] = useState(0);
 
     const location = useLocation();
     const viewportRef = useRef<HTMLDivElement>(null);
@@ -117,9 +162,23 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
         1,
         Math.ceil((timelineEndMinute - timelineStartMinute) / 30)
     );
-    const timelineHeight = timelineHalfHours * gridHalfCellHeight;
-    const roomColumns = `${timeColumnWidth}px ${gridRooms.map(() => `${roomColumnMinWidth}px`).join(" ")}`;
-    const calendarWidth = timeColumnWidth + gridRooms.length * roomColumnMinWidth;
+    const calculatedTimelineHeight = timelineHalfHours * gridHalfCellHeight;
+    const timelineHeight = Math.max(calculatedTimelineHeight, availableHeight);
+    const roomColumnWidths = gridRooms.map((room, roomIndex) => {
+        const isLastPlaceholder = Boolean(room.placeholder) && roomIndex === gridRooms.length - 1;
+        const remainingWidth =
+            availableWidth - timeColumnWidth - (gridRooms.length - 1) * roomColumnMinWidth;
+
+        return isLastPlaceholder && availableWidth > 0
+            ? Math.max(0, remainingWidth)
+            : roomColumnMinWidth;
+    });
+    const resolvedRoomColumns = `${timeColumnWidth}px ${roomColumnWidths.map((width) => `${width}px`).join(" ")}`;
+    const roomColumnOffsets = roomColumnWidths.map((_, roomIndex) =>
+        roomColumnWidths.slice(0, roomIndex).reduce((total, width) => total + width, 0)
+    );
+    const calendarWidth =
+        timeColumnWidth + roomColumnWidths.reduce((total, width) => total + width, 0);
     const calendarHalfHourMarks = Array.from({ length: timelineHalfHours + 1 }, (_, halfHour) => {
         const offsetMinutes = timelineStartMinute + halfHour * 30;
 
@@ -135,6 +194,14 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
             currentHiddenRooms.includes(roomName)
                 ? currentHiddenRooms.filter((currentRoom) => currentRoom !== roomName)
                 : [...currentHiddenRooms, roomName]
+        );
+    };
+
+    const toggleOrientation = () => {
+        onOrientationChange(
+            orientation === CalendarOrientation.Rooms
+                ? CalendarOrientation.Times
+                : CalendarOrientation.Rooms
         );
     };
 
@@ -154,9 +221,60 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
         }
     };
 
+    const timelineWidth = timelineHalfHours * calendarHalfHourWidth;
+    const alternateCalendarWidth = calendarRoomLabelWidth + timelineWidth;
+    const horizontalCalendarWidth =
+        orientation === CalendarOrientation.Rooms ? calendarWidth : alternateCalendarWidth;
+    const minimumRoomRowCount = Math.max(
+        rooms.length,
+        Math.ceil(availableHeight / calendarRoomRowHeight)
+    );
+    const calendarRows = [
+        ...rooms,
+        ...Array.from({ length: minimumRoomRowCount - rooms.length }, (_, index) => ({
+            value: `__empty-room-row-${index}`,
+            label: "",
+            placeholder: true,
+        })),
+    ];
+    const calendarBodyWidth =
+        orientation === CalendarOrientation.Rooms ? calendarWidth : alternateCalendarWidth;
+    const calendarBodyHeight =
+        orientation === CalendarOrientation.Rooms
+            ? timelineHeight
+            : calendarRows.length * calendarRoomRowHeight;
+    const calendarLaneOffsetWidth =
+        orientation === CalendarOrientation.Rooms ? timeColumnWidth : calendarRoomLabelWidth;
+    const calendarLaneWidth =
+        orientation === CalendarOrientation.Rooms ? calendarWidth - timeColumnWidth : timelineWidth;
+
+    const getEventLayout = ({
+        startMinute,
+        endMinute,
+        roomIndex,
+    }: PositionedEvent): CalendarEventLayout =>
+        orientation === CalendarOrientation.Rooms
+            ? {
+                  top:
+                      ((startMinute - timelineStartMinute) / 60) * gridCellHeight + gridEventMargin,
+                  height: ((endMinute - startMinute) / 60) * gridCellHeight - gridEventMargin,
+                  left: roomColumnOffsets[roomIndex] + gridEventMargin,
+                  width: roomColumnWidths[roomIndex] - gridEventMargin,
+              }
+            : {
+                  top: roomIndex * calendarRoomRowHeight + gridEventMargin,
+                  height: calendarRoomRowHeight - gridEventMargin * 2,
+                  left:
+                      ((startMinute - timelineStartMinute) / 30) * calendarHalfHourWidth +
+                      gridEventMargin,
+                  width:
+                      ((endMinute - startMinute) / 30) * calendarHalfHourWidth -
+                      gridEventMargin * 2,
+              };
+
     useEffect(() => {
         syncHorizontalScroll(readStoredValue(horizontalScrollStorageKey, 0));
-    }, [availableWidth, activeDay]);
+    }, [availableWidth, activeDay, orientation]);
 
     useEffect(() => {
         writeStoredValue(hiddenRoomsStorageKey, hiddenRooms);
@@ -168,7 +286,12 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
             return;
         }
 
-        const updateWidth = () => setAvailableWidth(viewport.clientWidth);
+        const updateDimensions = () => {
+            setAvailableWidth(viewport.clientWidth);
+            setAvailableHeight(viewport.clientHeight);
+        };
+
+        const updateWidth = updateDimensions;
         updateWidth();
 
         if (typeof ResizeObserver === "undefined") {
@@ -206,7 +329,13 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
                 })}
             </CalendarDaySelector>
             {hiddenRoomDetails.length > 0 && (
-                <CalendarRoomControls aria-label="Hidden room columns">
+                <CalendarRoomControls
+                    aria-label={
+                        orientation === CalendarOrientation.Rooms
+                            ? "Hidden room columns"
+                            : "Hidden room rows"
+                    }
+                >
                     <CalendarRoomControlsLabel>Hidden rooms</CalendarRoomControlsLabel>
                     {hiddenRoomDetails.map((room) => (
                         <CalendarHiddenRoom key={room.value} title={room.label}>
@@ -234,131 +363,184 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
                 <CalendarViewport>
                     <CalendarRoomHeaderViewport>
                         <CalendarRoomHeader
-                            ref={roomHeaderRef}
+                            ref={
+                                orientation === CalendarOrientation.Rooms
+                                    ? roomHeaderRef
+                                    : undefined
+                            }
                             style={{
-                                gridTemplateColumns: roomColumns,
+                                gridTemplateColumns:
+                                    orientation === CalendarOrientation.Rooms
+                                        ? resolvedRoomColumns
+                                        : `${calendarRoomLabelWidth}px ${timelineWidth}px`,
                             }}
                         >
-                            <CalendarRoomCorner></CalendarRoomCorner>
-                            {gridRooms.map((room) => (
-                                <CalendarRoomLabel
-                                    $hidden={
-                                        Boolean(room.placeholder) ||
-                                        hiddenRooms.includes(room.value)
-                                    }
-                                    $placeholder={Boolean(room.placeholder)}
-                                    key={room.value}
-                                    title={room.label}
+                            <CalendarOrientationButton
+                                type="button"
+                                aria-label="Swap columns and rows"
+                                title="Swap columns and rows"
+                                onClick={toggleOrientation}
+                            >
+                                <CalendarOrientationArrow aria-hidden="true">
+                                    &lt;-&gt;
+                                </CalendarOrientationArrow>
+                            </CalendarOrientationButton>
+                            {orientation === CalendarOrientation.Rooms ? (
+                                gridRooms.map((room) => (
+                                    <CalendarRoomLabel
+                                        $hidden={
+                                            Boolean(room.placeholder) ||
+                                            hiddenRooms.includes(room.value)
+                                        }
+                                        $placeholder={Boolean(room.placeholder)}
+                                        key={room.value}
+                                        title={room.label}
+                                    >
+                                        {!room.placeholder && <span>{room.label}</span>}
+                                        {!room.placeholder && (
+                                            <CalendarRoomHide
+                                                type="button"
+                                                aria-label={`${hiddenRooms.includes(room.value) ? "Show" : "Hide"} ${room.label}`}
+                                                title={`${hiddenRooms.includes(room.value) ? "Show" : "Hide"} ${room.label}`}
+                                                onClick={() => toggleRoom(room.value)}
+                                            >
+                                                x
+                                            </CalendarRoomHide>
+                                        )}
+                                    </CalendarRoomLabel>
+                                ))
+                            ) : (
+                                <CalendarTimeGridHeaderTimeline
+                                    ref={roomHeaderRef}
+                                    style={{ width: timelineWidth }}
                                 >
-                                    {!room.placeholder && <span>{room.label}</span>}
-                                    {!room.placeholder && (
-                                        <CalendarRoomHide
-                                            type="button"
-                                            aria-label={`${hiddenRooms.includes(room.value) ? "Show" : "Hide"} ${room.label}`}
-                                            title={`${hiddenRooms.includes(room.value) ? "Show" : "Hide"} ${room.label}`}
-                                            onClick={() => toggleRoom(room.value)}
-                                        >
-                                            x
-                                        </CalendarRoomHide>
-                                    )}
-                                </CalendarRoomLabel>
-                            ))}
+                                    {calendarHalfHourMarks
+                                        .filter((mark) => mark.showLabel)
+                                        .map((mark) => (
+                                            <CalendarTimeGridHeaderLabel
+                                                $left={mark.halfHour * calendarHalfHourWidth}
+                                                key={mark.halfHour}
+                                            >
+                                                {getCalendarTimeLabel(mark.offsetMinutes)}
+                                            </CalendarTimeGridHeaderLabel>
+                                        ))}
+                                </CalendarTimeGridHeaderTimeline>
+                            )}
                         </CalendarRoomHeader>
                     </CalendarRoomHeaderViewport>
                     <CalendarScrollViewport
                         ref={viewportRef}
                         onScroll={() => syncHorizontalScroll(viewportRef.current?.scrollLeft ?? 0)}
                     >
-                        <CalendarCanvas style={{ width: calendarWidth }}>
-                            <CalendarTimeline
-                                style={{ height: timelineHeight, gridTemplateColumns: roomColumns }}
-                            >
-                                <CalendarHours>
+                        <CalendarCanvas
+                            style={{
+                                width: calendarBodyWidth,
+                                height: calendarBodyHeight,
+                            }}
+                        >
+                            {orientation === CalendarOrientation.Rooms ? (
+                                <CalendarGridHours
+                                    $width={timeColumnWidth}
+                                    $height={calendarBodyHeight}
+                                >
                                     {calendarHalfHourMarks
                                         .filter((mark) => mark.showLabel)
                                         .map((mark) => (
                                             <CalendarHourLabel
                                                 key={mark.halfHour}
-                                                style={{ top: mark.halfHour * gridHalfCellHeight }}
+                                                style={{
+                                                    top: mark.halfHour * gridHalfCellHeight,
+                                                }}
                                             >
                                                 {getCalendarTimeLabel(mark.offsetMinutes)}
                                             </CalendarHourLabel>
                                         ))}
-                                </CalendarHours>
-                                <CalendarLane style={{ height: timelineHeight }}>
-                                    {gridRooms.slice(1).map((room, roomIndex) => (
-                                        <CalendarRoomDivider
-                                            key={room.value}
-                                            style={{
-                                                left: `${(roomIndex + 1) * roomColumnMinWidth}px`,
-                                            }}
-                                        />
+                                </CalendarGridHours>
+                            ) : (
+                                <CalendarGridRoomLabelColumn $height={calendarBodyHeight}>
+                                    {calendarRows.map((room) => (
+                                        <CalendarGridRoomLabel key={room.value}>
+                                            <span>{room.label}</span>
+                                            {!room.placeholder && (
+                                                <CalendarRoomHide
+                                                    type="button"
+                                                    aria-label={`Hide ${room.label}`}
+                                                    title={`Hide ${room.label}`}
+                                                    onClick={() => toggleRoom(room.value)}
+                                                >
+                                                    x
+                                                </CalendarRoomHide>
+                                            )}
+                                        </CalendarGridRoomLabel>
                                     ))}
-                                    {calendarHalfHourMarks
-                                        .filter((mark) => mark.showLabel)
-                                        .map((mark) => (
-                                            <CalendarHourLine
-                                                key={mark.halfHour}
-                                                style={{ top: mark.halfHour * gridHalfCellHeight }}
+                                </CalendarGridRoomLabelColumn>
+                            )}
+                            <CalendarGridLane
+                                $left={calendarLaneOffsetWidth}
+                                $width={calendarLaneWidth}
+                                $height={calendarBodyHeight}
+                            >
+                                {orientation === CalendarOrientation.Rooms ? (
+                                    <>
+                                        {gridRooms.slice(1).map((room, roomIndex) => (
+                                            <CalendarRoomDivider
+                                                key={room.value}
+                                                style={{
+                                                    left: `${roomColumnOffsets[roomIndex + 1]}px`,
+                                                }}
                                             />
                                         ))}
-                                    {positionedEvents.map(
-                                        ({ event, startMinute, endMinute, roomIndex }) => {
-                                            const left =
-                                                roomIndex * roomColumnMinWidth + gridEventMargin;
-                                            const width = roomColumnMinWidth - gridEventMargin;
-
-                                            return (
-                                                <CalendarEvent
-                                                    $trackColor={event.track.color}
-                                                    $top={
-                                                        ((startMinute - timelineStartMinute) / 60) *
-                                                            gridCellHeight +
-                                                        gridEventMargin
-                                                    }
-                                                    $height={
-                                                        ((endMinute - startMinute) / 60) *
-                                                            gridCellHeight -
-                                                        gridEventMargin
-                                                    }
-                                                    $left={left}
-                                                    $width={width}
-                                                    key={event.id}
-                                                    to={{
-                                                        pathname: `/event/${event.id}`,
-                                                        search: location.search,
+                                        {calendarHalfHourMarks
+                                            .filter((mark) => mark.showLabel)
+                                            .map((mark) => (
+                                                <CalendarHourLine
+                                                    key={mark.halfHour}
+                                                    style={{
+                                                        top: mark.halfHour * gridHalfCellHeight,
                                                     }}
-                                                    state={{ fromSchedule: true }}
-                                                >
-                                                    <CalendarEventTime>
-                                                        {event.start
-                                                            ? formatEventTime(event.start)
-                                                            : "TBD"}
-                                                    </CalendarEventTime>
-                                                    <CalendarEventTitle>
-                                                        {event.title}
-                                                    </CalendarEventTitle>
-                                                    <CalendarEventMeta>
-                                                        {event.room.name} /{" "}
-                                                        {formatEventDuration(event.duration)}
-                                                    </CalendarEventMeta>
-                                                </CalendarEvent>
-                                            );
-                                        }
-                                    )}
-                                </CalendarLane>
-                            </CalendarTimeline>
+                                                />
+                                            ))}
+                                    </>
+                                ) : (
+                                    <>
+                                        {calendarHalfHourMarks
+                                            .filter((mark) => mark.showLabel)
+                                            .map((mark) => (
+                                                <CalendarTimeGridLine
+                                                    $left={mark.halfHour * calendarHalfHourWidth}
+                                                    key={mark.halfHour}
+                                                />
+                                            ))}
+                                        {calendarRows.map((room, roomIndex) => (
+                                            <CalendarHourLine
+                                                key={room.value}
+                                                style={{ top: roomIndex * calendarRoomRowHeight }}
+                                            />
+                                        ))}
+                                    </>
+                                )}
+                                {positionedEvents.map((positionedEvent) => (
+                                    <CalendarEventLink
+                                        event={positionedEvent.event}
+                                        layout={getEventLayout(positionedEvent)}
+                                        key={positionedEvent.event.id}
+                                        search={location.search}
+                                    />
+                                ))}
+                            </CalendarGridLane>
                         </CalendarCanvas>
                     </CalendarScrollViewport>
-                    {availableWidth > 0 && calendarWidth > availableWidth && (
+                    {availableWidth > 0 && horizontalCalendarWidth > availableWidth && (
                         <CalendarHorizontalScroll
                             ref={horizontalScrollRef}
-                            aria-label="Scroll calendar rooms horizontally"
+                            aria-label={`Scroll calendar ${orientation === CalendarOrientation.Rooms ? "rooms" : "times"} horizontally`}
                             onScroll={() =>
                                 syncHorizontalScroll(horizontalScrollRef.current?.scrollLeft ?? 0)
                             }
                         >
-                            <CalendarHorizontalScrollContent style={{ width: calendarWidth }} />
+                            <CalendarHorizontalScrollContent
+                                style={{ width: horizontalCalendarWidth }}
+                            />
                         </CalendarHorizontalScroll>
                     )}
                 </CalendarViewport>

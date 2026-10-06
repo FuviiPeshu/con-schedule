@@ -9,12 +9,16 @@ import {
     PaginationStatus,
 } from "./Pagination.styled";
 
+const formatPaginationNumber = (value: number, maximum: number): string =>
+    String(value).padStart(String(maximum).length, "0");
+
 type PaginationProps = {
     currentPage: number;
     totalPages: number;
     pageStart: number;
     pageEnd: number;
     totalItems: number;
+    itemLabel?: string;
     pageSize: number;
     pageSizeOptions: readonly number[];
     position: "top" | "bottom";
@@ -28,6 +32,7 @@ export const PaginationComponent = ({
     pageStart,
     pageEnd,
     totalItems,
+    itemLabel = "items",
     pageSize,
     pageSizeOptions,
     position,
@@ -36,7 +41,8 @@ export const PaginationComponent = ({
 }: PaginationProps) => (
     <PaginationBar aria-label={`Schedule pagination (${position})`}>
         <PaginationRange>
-            Showing {pageStart}-{pageEnd} / {totalItems} items
+            Showing {formatPaginationNumber(pageStart, totalItems)}-
+            {formatPaginationNumber(pageEnd, totalItems)} / {totalItems} {itemLabel}
         </PaginationRange>
         <PaginationControls>
             <PaginationButton
@@ -48,7 +54,7 @@ export const PaginationComponent = ({
                 &lt;
             </PaginationButton>
             <PaginationStatus>
-                Page {currentPage} / {totalPages}
+                Page {formatPaginationNumber(currentPage, totalPages)} / {totalPages}
             </PaginationStatus>
             <PaginationButton
                 type="button"

@@ -16,7 +16,11 @@ interface CalendarEventLayoutProps {
 
 export const CalendarViewWrapper = styled.section`
     margin-top: 16px;
-    display: grid;
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
     background: ${theme.surfaceDark};
 `;
 
@@ -96,7 +100,11 @@ export const CalendarHiddenRoom = styled.div`
 `;
 
 export const CalendarViewport = styled.div`
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
     min-width: 0;
+    min-height: 0;
     position: relative;
     border-top: 2px solid ${theme.primary};
 `;
@@ -112,6 +120,8 @@ export const CalendarRoomHeaderViewport = styled.div`
 `;
 
 export const CalendarScrollViewport = styled.div`
+    flex: 1 0 auto;
+    min-height: 0;
     width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
@@ -153,15 +163,59 @@ export const CalendarHorizontalScrollContent = styled.div`
     height: 1px;
 `;
 
-export const CalendarTimeline = styled.div`
-    display: grid;
-    width: max-content;
+export const CalendarCanvas = styled.div`
+    position: relative;
+    display: block;
     min-width: max-content;
 `;
 
-export const CalendarCanvas = styled.div`
-    display: block;
-    min-width: max-content;
+export const CalendarGridHours = styled.div<{ $width: number; $height: number }>`
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: ${({ $width }) => `${$width}px`};
+    height: ${({ $height }) => `${$height}px`};
+    border-right: 1px solid ${theme.primaryDeep};
+`;
+
+export const CalendarGridLane = styled.div<{
+    $left: number;
+    $width: number;
+    $height: number;
+}>`
+    position: absolute;
+    top: 0;
+    left: ${({ $left }) => `${$left}px`};
+    width: ${({ $width }) => `${$width}px`};
+    height: ${({ $height }) => `${$height}px`};
+    background: ${theme.surfaceHover};
+`;
+
+export const CalendarGridRoomLabelColumn = styled.div<{ $height: number }>`
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    width: 176px;
+    height: ${({ $height }) => `${$height}px`};
+    background: ${theme.surfaceDark};
+`;
+
+export const CalendarGridRoomLabel = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 176px;
+    height: 112px;
+    min-width: 176px;
+    padding: 8px 12px;
+    border-right: 1px solid ${theme.primary};
+    border-top: 1px solid ${theme.primaryDeep};
+    background: ${theme.surfaceDark};
+    color: ${theme.textSubtle};
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.2;
+    word-wrap: break-word;
 `;
 
 export const CalendarRoomHeader = styled.div`
@@ -179,6 +233,41 @@ export const CalendarRoomCorner = styled.div`
     font-size: 0.64rem;
     letter-spacing: 0.08em;
     text-align: right;
+`;
+
+export const CalendarOrientationButton = styled.button`
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-height: 64px;
+    padding: 6px;
+    border: 0;
+    border-right: 1px solid ${theme.primary};
+    background: ${theme.surfaceDark};
+    color: ${theme.textSubtle};
+    cursor: pointer;
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    &:hover,
+    &:focus-visible {
+        background: ${theme.surfaceHover};
+        color: ${theme.primaryAction};
+    }
+
+    &:focus-visible {
+        outline: 2px solid ${theme.primaryAction};
+        outline-offset: -2px;
+    }
+`;
+
+export const CalendarOrientationArrow = styled.span`
+    padding: 0 3px;
+    color: ${theme.primaryAction};
+    font-size: 0.7rem;
+    letter-spacing: 0;
 `;
 
 export const CalendarRoomLabel = styled.div<{ $hidden: boolean; $placeholder: boolean }>`
@@ -225,26 +314,12 @@ export const CalendarRoomDivider = styled.span`
     opacity: 0.64;
 `;
 
-export const CalendarHours = styled.div`
-    grid-column: 1;
-    grid-row: 1;
-    position: relative;
-    border-right: 1px solid ${theme.primaryDeep};
-`;
-
 export const CalendarHourLabel = styled.span`
     position: absolute;
     right: 8px;
     color: ${theme.textSubtle};
     font-size: 0.8rem;
     transform: translateY(-50%);
-`;
-
-export const CalendarLane = styled.div`
-    grid-column: 2 / -1;
-    grid-row: 1;
-    position: relative;
-    background: ${theme.surfaceHover};
 `;
 
 export const CalendarHourLine = styled.span`
@@ -339,4 +414,29 @@ export const CalendarEmpty = styled.p`
     margin: 0;
     padding: 32px 24px;
     color: ${theme.textMuted};
+`;
+
+export const CalendarTimeGridHeaderTimeline = styled.div`
+    grid-column: 2;
+    position: relative;
+    height: 64px;
+`;
+
+export const CalendarTimeGridHeaderLabel = styled.span<{ $left: number }>`
+    position: absolute;
+    top: 50%;
+    left: ${({ $left }) => `${$left}px`};
+    color: ${theme.textSubtle};
+    font-size: 0.8rem;
+    transform: translate(-50%, -50%);
+`;
+
+export const CalendarTimeGridLine = styled.span<{ $left: number }>`
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: ${({ $left }) => `${$left}px`};
+    width: 1px;
+    background: ${theme.primaryDeep};
+    opacity: 0.64;
 `;
