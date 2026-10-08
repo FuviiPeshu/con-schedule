@@ -62,7 +62,8 @@ export const PaginationButton = styled.button`
     }
 `;
 
-export const PaginationStatus = styled.span`
+export const PaginationStatus = styled.span<{ $minWidth?: number }>`
+    min-width: ${({ $minWidth }) => ($minWidth ? `${$minWidth}ch` : "auto")};
     padding: 0 4px;
     color: ${theme.textSubtle};
     font-size: 0.8rem;

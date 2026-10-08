@@ -99,7 +99,7 @@ export const SchedulePage = () => {
     const resetSchedule = location.state?.resetSchedule === true;
     const activeScheduleView: ScheduleView = resetSchedule
         ? ScheduleView.List
-        : searchParams.has("date")
+        : searchParams.has("date") && !searchParams.has("page")
           ? ScheduleView.Calendar
           : searchParams.has("page")
             ? ScheduleView.List
@@ -108,8 +108,25 @@ export const SchedulePage = () => {
     const hasActiveFilters = Object.values(filters).some(Boolean);
     const filterOptions = useMemo(() => getFilterOptions(events), [events]);
     const appliedFilters = useMemo(
-        () => ({ ...filters, search: searchForFiltering }),
-        [filters.room, filters.date, filters.tag, filters.speaker, searchForFiltering]
+        () => ({
+            ...filters,
+            date:
+                activeScheduleView === ScheduleView.List &&
+                searchParams.has("date") &&
+                searchParams.has("page")
+                    ? ""
+                    : filters.date,
+            search: searchForFiltering,
+        }),
+        [
+            activeScheduleView,
+            filters.date,
+            filters.room,
+            filters.speaker,
+            filters.tag,
+            searchForFiltering,
+            searchParams,
+        ]
     );
     const filteredEvents = useMemo(
         () => events.filter((event) => eventMatchesFilters(event, appliedFilters)),
@@ -330,7 +347,7 @@ export const SchedulePage = () => {
                         />
                     ) : (
                         <ListViewComponent
-                            totalEvents={events.length}
+                            events={events}
                             filteredEvents={filteredEvents}
                             scheduleContentRef={scheduleContentRef}
                             updateSearchParams={updateSearchParams}

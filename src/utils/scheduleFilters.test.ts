@@ -13,6 +13,7 @@ import {
     getFilterOptions,
     uniqueOptions,
     uniqueValues,
+    UNSCHEDULED_FILTER,
 } from "./scheduleFilters.utils";
 
 const openingEvent = EXAMPLE_EVENT_MOCK_DATA;
@@ -56,6 +57,7 @@ describe("Utils / Schedule Filters", () => {
         expect(options.date).toEqual([
             { value: "2026-08-20", label: "2026-08-20" },
             { value: "2026-08-21", label: "2026-08-21" },
+            { value: UNSCHEDULED_FILTER.value, label: UNSCHEDULED_FILTER.label },
         ]);
         expect(options.tag).toEqual([
             { value: "EF-Services", label: "EF-Services" },
@@ -91,6 +93,17 @@ describe("Utils / Schedule Filters", () => {
     it("should filter by date", () => {
         expect(eventMatchesFilters(openingEvent, withFilters({ date: "2026-08-20" }))).toBe(true);
         expect(eventMatchesFilters(loungeEvent, withFilters({ date: "2026-08-20" }))).toBe(false);
+    });
+
+    it("should filter unscheduled events by the unscheduled date option", () => {
+        const eventWithoutDate = { ...loungeEvent, start: null };
+
+        expect(
+            eventMatchesFilters(eventWithoutDate, withFilters({ date: UNSCHEDULED_FILTER.value }))
+        ).toBe(true);
+        expect(
+            eventMatchesFilters(loungeEvent, withFilters({ date: UNSCHEDULED_FILTER.value }))
+        ).toBe(false);
     });
 
     it("should filter by tag", () => {

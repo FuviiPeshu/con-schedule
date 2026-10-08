@@ -1,3 +1,5 @@
+import { fullDayPageSize } from "../../configuration";
+import type { PageSize } from "../../schedule.types";
 import {
     PageSizeControl,
     PageSizeLabel,
@@ -19,8 +21,14 @@ type PaginationProps = {
     pageEnd: number;
     totalItems: number;
     itemLabel?: string;
-    pageSize: number;
-    pageSizeOptions: readonly number[];
+    /** Optional text override for the pagination range (left section) */
+    rangeText?: string;
+    /** Optional text override for the pagination status (middle section) */
+    statusText?: string;
+    /** Optional minimum character width for the status to avoid layout shifts */
+    statusMinWidth?: number;
+    pageSize: PageSize;
+    pageSizeOptions: readonly PageSize[];
     position: "top" | "bottom";
     onPageChange: (page: number) => void;
     onPageSizeChange: (value: string) => void;
@@ -33,6 +41,9 @@ export const PaginationComponent = ({
     pageEnd,
     totalItems,
     itemLabel = "items",
+    rangeText,
+    statusText,
+    statusMinWidth,
     pageSize,
     pageSizeOptions,
     position,
@@ -41,8 +52,12 @@ export const PaginationComponent = ({
 }: PaginationProps) => (
     <PaginationBar aria-label={`Schedule pagination (${position})`}>
         <PaginationRange>
-            Showing {formatPaginationNumber(pageStart, totalItems)}-
-            {formatPaginationNumber(pageEnd, totalItems)} / {totalItems} {itemLabel}
+            {rangeText ?? (
+                <>
+                    Showing {formatPaginationNumber(pageStart, totalItems)}-
+                    {formatPaginationNumber(pageEnd, totalItems)} / {totalItems} {itemLabel}
+                </>
+            )}
         </PaginationRange>
         <PaginationControls>
             <PaginationButton
@@ -53,8 +68,9 @@ export const PaginationComponent = ({
             >
                 &lt;
             </PaginationButton>
-            <PaginationStatus>
-                Page {formatPaginationNumber(currentPage, totalPages)} / {totalPages}
+            <PaginationStatus $minWidth={statusMinWidth}>
+                {statusText ??
+                    `Page ${formatPaginationNumber(currentPage, totalPages)} / ${totalPages}`}
             </PaginationStatus>
             <PaginationButton
                 type="button"
@@ -74,7 +90,7 @@ export const PaginationComponent = ({
             >
                 {pageSizeOptions.map((option) => (
                     <option key={option} value={option}>
-                        {option}
+                        {option === fullDayPageSize ? "FULL DAY" : option}
                     </option>
                 ))}
             </PageSizeSelect>

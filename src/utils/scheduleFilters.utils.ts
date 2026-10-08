@@ -10,6 +10,11 @@ export const emptyFilters: ScheduleFilters = {
     search: "",
 };
 
+export const UNSCHEDULED_FILTER: FilterOption = {
+    label: "Unscheduled",
+    value: "Unscheduled",
+} as const;
+
 /** Returns an array of unique, non-empty, sorted string values */
 export const uniqueValues = (values: string[]) =>
     [...new Set(values.filter(Boolean))].sort((first, second) => first.localeCompare(second));
@@ -35,7 +40,13 @@ const valuesToOptions = (values: string[]): FilterOption[] =>
 /** Gets the unique filter options from provided events list */
 export const getFilterOptions = (events: EventSlot[]): FilterOptions => ({
     room: valuesToOptions(events.map((event) => event.room.name)),
-    date: valuesToOptions(events.map(getEventDate)),
+    date: uniqueOptions(
+        events.map((event) =>
+            event.start
+                ? { value: getEventDate(event), label: getEventDate(event) }
+                : UNSCHEDULED_FILTER
+        )
+    ),
     tag: uniqueOptions(
         events.flatMap((event) => event.tags.map((tag) => ({ value: tag.tag, label: tag.tag })))
     ),
@@ -69,10 +80,15 @@ export const getEventSearchText = (event: EventSlot) =>
 /** Checks if event matches selected filters */
 export const eventMatchesFilters = (event: EventSlot, filters: ScheduleFilters) => {
     const searchQuery = normalizeText(filters.search);
+    const matchesDate =
+        !filters.date ||
+        (filters.date === UNSCHEDULED_FILTER.value
+            ? !event.start
+            : getEventDate(event) === filters.date);
 
     return (
         (!filters.room || event.room.name === filters.room) &&
-        (!filters.date || getEventDate(event) === filters.date) &&
+        matchesDate &&
         (!filters.tag || event.tags.some((tag) => tag.tag === filters.tag)) &&
         (!filters.speaker || event.speakers.some((speaker) => speaker.code === filters.speaker)) &&
         (!searchQuery || getEventSearchText(event).includes(searchQuery))

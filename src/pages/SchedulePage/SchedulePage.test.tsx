@@ -1,11 +1,12 @@
 import { BrowserRouter } from "react-router-dom";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SCHEDULE_MOCK_DATA } from "../../__mocks__/schedule.mocks";
 import { buildScheduleData } from "../../api";
 import { useSchedule } from "../../hooks/useSchedule";
+import { UNSCHEDULED_FILTER } from "../../utils/scheduleFilters.utils";
 import { SchedulePage } from "./SchedulePage.component";
 
 const pageElements = {
@@ -94,6 +95,25 @@ describe("Pages / SchedulePage", () => {
             },
         ],
     });
+    const unscheduledScheduleData = buildScheduleData({
+        ...SCHEDULE_MOCK_DATA,
+        days: [
+            {
+                ...SCHEDULE_MOCK_DATA.days[0],
+                slots: [
+                    ...SCHEDULE_MOCK_DATA.days[0].slots,
+                    {
+                        ...SCHEDULE_MOCK_DATA.days[0].slots[0],
+                        id: 1200,
+                        title: "Unscheduled event",
+                        start: null,
+                        end: null,
+                    },
+                ],
+            },
+            SCHEDULE_MOCK_DATA.days[1],
+        ],
+    });
 
     const renderPage = () =>
         render(
@@ -131,6 +151,23 @@ describe("Pages / SchedulePage", () => {
         await user.selectOptions(pageElements.dateFilter, "2026-08-20");
         expect(screen.getByText("Opening Ceremony")).toBeInTheDocument();
         expect(screen.queryByText("Fursuit Lounge - Fri")).not.toBeInTheDocument();
+    });
+
+    it("should expose and filter the Unscheduled date option", async () => {
+        const user = userEvent.setup();
+        mockedUseSchedule.mockReturnValue({
+            data: unscheduledScheduleData,
+            isLoading: false,
+            isError: false,
+        } as ReturnType<typeof useSchedule>);
+
+        renderPage();
+
+        expect(screen.getByRole("option", { name: UNSCHEDULED_FILTER.label })).toBeInTheDocument();
+        await user.selectOptions(pageElements.dateFilter, UNSCHEDULED_FILTER.value);
+
+        expect(screen.getByText("Unscheduled event")).toBeInTheDocument();
+        expect(screen.queryByText("Opening Ceremony")).not.toBeInTheDocument();
     });
 
     it("should filter events by tag and speaker", async () => {
@@ -242,6 +279,35 @@ describe("Pages / SchedulePage", () => {
         await user.selectOptions(screen.getByRole("combobox", { name: "Page size (top)" }), "5");
         expect(screen.getAllByText("Page 1 / 3")).toHaveLength(2);
         expect(screen.getByText("Pagination event 1")).toBeInTheDocument();
+    });
+
+    it("should paginate the list one schedule day at a time", async () => {
+        const user = userEvent.setup();
+
+        renderPage();
+
+        await user.selectOptions(
+            screen.getByRole("combobox", { name: "Page size (top)" }),
+            "full-day"
+        );
+
+        screen.getAllByRole("navigation", { name: /Schedule pagination/ }).forEach((pagination) => {
+            expect(within(pagination).getByText("Showing 1 / 1 items")).toBeInTheDocument();
+            expect(within(pagination).getByText(/Thursday,\s+Aug\s+20/)).toBeInTheDocument();
+        });
+        expect(pageElements.dateFilter).toHaveValue("2026-08-20");
+        expect(screen.getByText("Opening Ceremony")).toBeInTheDocument();
+        expect(screen.queryByText("Fursuit Lounge - Fri")).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole("button", { name: "Next page (bottom)" }));
+
+        screen.getAllByRole("navigation", { name: /Schedule pagination/ }).forEach((pagination) => {
+            expect(within(pagination).getByText("Showing 1 / 1 items")).toBeInTheDocument();
+            expect(within(pagination).getByText(/Friday,\s+Aug\s+21/)).toBeInTheDocument();
+        });
+        expect(pageElements.dateFilter).toHaveValue("2026-08-21");
+        expect(screen.getByText("Fursuit Lounge - Fri")).toBeInTheDocument();
+        expect(screen.queryByText("Opening Ceremony")).not.toBeInTheDocument();
     });
 
     it("should group same-start events in compact list mode", async () => {
@@ -409,6 +475,28 @@ describe("Pages / SchedulePage", () => {
                 "true"
             );
         });
+    });
+
+    it("should restore a FULL DAY list page from date and page URL state", async () => {
+        window.history.replaceState({}, "", "/?date=2026-08-21&page=1");
+
+        renderPage();
+
+        await waitFor(() => {
+            expect(screen.getByRole("button", { name: "List" })).toHaveAttribute(
+                "aria-pressed",
+                "true"
+            );
+            expect(screen.getByRole("combobox", { name: "Page size (top)" })).toHaveValue(
+                "full-day"
+            );
+            expect(screen.getByRole("combobox", { name: "Filter by date" })).toHaveValue(
+                "2026-08-21"
+            );
+        });
+
+        expect(screen.getByText("Fursuit Lounge - Fri")).toBeInTheDocument();
+        expect(screen.queryByText("Opening Ceremony")).not.toBeInTheDocument();
     });
 
     it("should preserve direct day URL while schedule data is loading", async () => {
