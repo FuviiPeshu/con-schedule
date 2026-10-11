@@ -371,6 +371,26 @@ describe("Pages / SchedulePage", () => {
         expect(screen.queryByRole("link", { name: /Opening Ceremony/ })).not.toBeInTheDocument();
     });
 
+    it("should resize a room column with the accessible header handle", async () => {
+        const user = userEvent.setup();
+
+        renderPage();
+
+        await user.click(screen.getByRole("button", { name: "Calendar" }));
+        const resizeHandle = screen.getByRole("button", {
+            name: "Resize Auditorium column",
+        });
+
+        await user.click(resizeHandle);
+        await user.keyboard("{ArrowRight}");
+
+        const storedWidths = JSON.parse(
+            window.localStorage.getItem("con-schedule:EF30:calendar:room-widths") ?? "{}"
+        ) as Record<string, number>;
+
+        expect(storedWidths.Auditorium).toBe(272);
+    });
+
     it("should swap calendar orientation to time columns", async () => {
         const user = userEvent.setup();
 

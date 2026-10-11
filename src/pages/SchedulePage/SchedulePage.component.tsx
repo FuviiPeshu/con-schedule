@@ -339,6 +339,7 @@ export const SchedulePage = () => {
                         <CalendarViewComponent
                             events={events}
                             filteredEvents={filteredEvents}
+                            scheduleContentRef={scheduleContentRef}
                             filters={filters}
                             appliedFilters={appliedFilters}
                             updateSearchParams={updateSearchParams}

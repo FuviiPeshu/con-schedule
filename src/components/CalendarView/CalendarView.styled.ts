@@ -119,13 +119,29 @@ export const CalendarRoomHeaderViewport = styled.div`
     background: ${theme.surfaceDark};
 `;
 
-export const CalendarScrollViewport = styled.div`
+export const CalendarScrollViewport = styled.div<{
+    $panning: boolean;
+    $dragEnabled: boolean;
+}>`
     flex: 1 0 auto;
     min-height: 0;
     width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
+    cursor: ${({ $panning }) => ($panning ? "grabbing" : "grab")};
     scrollbar-width: none;
+    touch-action: ${({ $dragEnabled }) => ($dragEnabled ? "none" : "pan-y")};
+    user-select: none;
+
+    ${({ $panning }) =>
+        $panning &&
+        css`
+            touch-action: none;
+
+            & * {
+                pointer-events: none;
+            }
+        `}
 
     &::-webkit-scrollbar {
         height: 0;
@@ -200,12 +216,12 @@ export const CalendarGridRoomLabelColumn = styled.div<{ $height: number }>`
     background: ${theme.surfaceDark};
 `;
 
-export const CalendarGridRoomLabel = styled.div`
+export const CalendarGridRoomLabel = styled.div<{ $height: number }>`
     display: flex;
     align-items: center;
     justify-content: space-between;
     width: 176px;
-    height: 112px;
+    height: ${({ $height }) => `${$height}px`};
     min-width: 176px;
     padding: 8px 12px;
     border-right: 1px solid ${theme.primary};
@@ -256,11 +272,6 @@ export const CalendarOrientationButton = styled.button`
         background: ${theme.surfaceHover};
         color: ${theme.primaryAction};
     }
-
-    &:focus-visible {
-        outline: 2px solid ${theme.primaryAction};
-        outline-offset: -2px;
-    }
 `;
 
 export const CalendarOrientationArrow = styled.span`
@@ -302,6 +313,24 @@ export const CalendarRoomHide = styled.button<{ $compact?: boolean }>`
     &:hover {
         border-color: ${theme.primaryAction};
         color: ${theme.primaryAction};
+    }
+`;
+
+export const CalendarRoomResizeHandle = styled.button`
+    position: absolute;
+    top: 0;
+    right: -5px;
+    bottom: 0;
+    z-index: 3;
+    width: 8px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: col-resize;
+
+    &:hover,
+    &:focus-visible {
+        background: ${theme.primaryAction};
     }
 `;
 

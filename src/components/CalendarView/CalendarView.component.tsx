@@ -43,6 +43,7 @@ import {
     CalendarRoomHeaderViewport,
     CalendarRoomHide,
     CalendarRoomLabel,
+    CalendarRoomResizeHandle,
     CalendarScrollViewport,
     CalendarTimeGridHeaderLabel,
     CalendarTimeGridHeaderTimeline,
@@ -62,6 +63,10 @@ export const calendarRoomRowHeight = 112;
 export const calendarRoomLabelWidth = 176;
 const hiddenRoomsStorageKey = `con-schedule:${conId}:calendar:hidden-rooms`;
 const horizontalScrollStorageKey = `con-schedule:${conId}:calendar:scroll-x`;
+const roomWidthsStorageKey = `con-schedule:${conId}:calendar:room-widths`;
+const roomWidthMin = 160;
+const roomWidthMax = 560;
+const roomWidthStep = 16;
 
 type CalendarEventLayout = {
     top: number;
@@ -97,6 +102,7 @@ const CalendarEventLink = ({ event, layout, search }: CalendarEventLinkProps) =>
 interface CalendarViewProps {
     events: EventSlot[];
     filteredEvents: EventSlot[];
+    scheduleContentRef: React.RefObject<HTMLDivElement | null>;
     filters: ScheduleFilters;
     appliedFilters: ScheduleFilters;
     updateSearchParams: (update: (params: URLSearchParams) => void) => void;
@@ -107,6 +113,7 @@ interface CalendarViewProps {
 export const CalendarViewComponent: FC<CalendarViewProps> = ({
     events,
     filteredEvents,
+    scheduleContentRef,
     filters,
     appliedFilters,
     updateSearchParams,
@@ -126,13 +133,45 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
     const [hiddenRooms, setHiddenRooms] = useState<string[]>(() =>
         readStoredValue<string[]>(hiddenRoomsStorageKey, [])
     );
+    const [roomWidthOverrides, setRoomWidthOverrides] = useState<Record<string, number>>(() => {
+        const storedWidths = readStoredValue<Record<string, unknown>>(roomWidthsStorageKey, {});
+
+        return Object.fromEntries(
+            Object.entries(storedWidths).flatMap(([roomName, width]) =>
+                typeof width === "number" && Number.isFinite(width)
+                    ? [[roomName, Math.min(roomWidthMax, Math.max(roomWidthMin, width))]]
+                    : []
+            )
+        );
+    });
     const [availableWidth, setAvailableWidth] = useState(0);
     const [availableHeight, setAvailableHeight] = useState(0);
+    const [isPanning, setIsPanning] = useState(false);
+    const [hasHorizontalOverflow, setHasHorizontalOverflow] = useState(false);
+    const [hasVerticalOverflow, setHasVerticalOverflow] = useState(false);
 
     const location = useLocation();
     const viewportRef = useRef<HTMLDivElement>(null);
     const horizontalScrollRef = useRef<HTMLDivElement>(null);
+    const calendarCanvasRef = useRef<HTMLDivElement>(null);
     const roomHeaderRef = useRef<HTMLDivElement>(null);
+    const panRef = useRef<{
+        pointerId: number;
+        startX: number;
+        startY: number;
+        startScrollLeft: number;
+        startScrollTop: number;
+        moved: boolean;
+        canScrollHorizontally: boolean;
+        canScrollVertically: boolean;
+    } | null>(null);
+    const suppressClickRef = useRef(false);
+    const resizeRef = useRef<{
+        roomName: string;
+        pointerId: number;
+        startX: number;
+        startWidth: number;
+    } | null>(null);
     const allRooms = useMemo(
         () => getCalendarRooms(filteredEvents, activeDay),
         [activeDay, filteredEvents]
@@ -164,14 +203,19 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
     );
     const calculatedTimelineHeight = timelineHalfHours * gridHalfCellHeight;
     const timelineHeight = Math.max(calculatedTimelineHeight, availableHeight);
+    const baseRoomWidths = gridRooms.map(
+        (room) => roomWidthOverrides[room.value] ?? roomColumnMinWidth
+    );
     const roomColumnWidths = gridRooms.map((room, roomIndex) => {
         const isLastPlaceholder = Boolean(room.placeholder) && roomIndex === gridRooms.length - 1;
         const remainingWidth =
-            availableWidth - timeColumnWidth - (gridRooms.length - 1) * roomColumnMinWidth;
+            availableWidth -
+            timeColumnWidth -
+            baseRoomWidths.slice(0, -1).reduce((total, width) => total + width, 0);
 
         return isLastPlaceholder && availableWidth > 0
             ? Math.max(0, remainingWidth)
-            : roomColumnMinWidth;
+            : baseRoomWidths[roomIndex];
     });
     const resolvedRoomColumns = `${timeColumnWidth}px ${roomColumnWidths.map((width) => `${width}px`).join(" ")}`;
     const roomColumnOffsets = roomColumnWidths.map((_, roomIndex) =>
@@ -205,19 +249,182 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
         );
     };
 
-    const syncHorizontalScroll = (scrollLeft: number) => {
-        writeStoredValue(horizontalScrollStorageKey, scrollLeft);
+    const updateRoomWidth = (roomName: string, width: number) => {
+        setRoomWidthOverrides((currentWidths) => ({
+            ...currentWidths,
+            [roomName]: Math.min(roomWidthMax, Math.max(roomWidthMin, width)),
+        }));
+    };
 
-        if (viewportRef.current && viewportRef.current.scrollLeft !== scrollLeft) {
-            viewportRef.current.scrollLeft = scrollLeft;
+    const startRoomResize = (
+        event: React.PointerEvent<HTMLButtonElement>,
+        roomName: string,
+        width: number
+    ) => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.currentTarget.focus();
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+        resizeRef.current = {
+            roomName,
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startWidth: width,
+        };
+    };
+
+    const moveRoomResize = (event: React.PointerEvent<HTMLButtonElement>) => {
+        const resize = resizeRef.current;
+
+        if (!resize || resize.pointerId !== event.pointerId) {
+            return;
         }
 
-        if (horizontalScrollRef.current && horizontalScrollRef.current.scrollLeft !== scrollLeft) {
-            horizontalScrollRef.current.scrollLeft = scrollLeft;
+        updateRoomWidth(resize.roomName, resize.startWidth + event.clientX - resize.startX);
+    };
+
+    const finishRoomResize = (event: React.PointerEvent<HTMLButtonElement>) => {
+        if (resizeRef.current?.pointerId === event.pointerId) {
+            resizeRef.current = null;
+            event.currentTarget.releasePointerCapture?.(event.pointerId);
+        }
+    };
+
+    const resizeRoomWithKeyboard = (
+        event: React.KeyboardEvent<HTMLButtonElement>,
+        roomName: string,
+        width: number
+    ) => {
+        const direction = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+
+        if (direction === 0 && event.key !== "Home" && event.key !== "End") {
+            return;
+        }
+
+        event.preventDefault();
+        updateRoomWidth(
+            roomName,
+            event.key === "Home"
+                ? roomWidthMin
+                : event.key === "End"
+                  ? roomWidthMax
+                  : width + direction * roomWidthStep
+        );
+    };
+
+    const startGridPan = (event: React.PointerEvent<HTMLDivElement>) => {
+        suppressClickRef.current = false;
+
+        if (event.button !== 0 || (event.target as HTMLElement).closest("button")) {
+            return;
+        }
+
+        const viewport = viewportRef.current;
+        const scheduleContent = scheduleContentRef.current;
+        const canScrollHorizontally = Boolean(
+            viewport && viewport.scrollWidth > viewport.clientWidth + 1
+        );
+        const canScrollVertically = Boolean(
+            scheduleContent && scheduleContent.scrollHeight > scheduleContent.clientHeight + 1
+        );
+
+        if (!canScrollHorizontally && !canScrollVertically) {
+            return;
+        }
+
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+        panRef.current = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            startScrollLeft: viewportRef.current?.scrollLeft ?? 0,
+            startScrollTop: scheduleContentRef.current?.scrollTop ?? 0,
+            moved: false,
+            canScrollHorizontally,
+            canScrollVertically,
+        };
+    };
+
+    const moveGridPan = (event: React.PointerEvent<HTMLDivElement>) => {
+        const pan = panRef.current;
+
+        if (!pan || pan.pointerId !== event.pointerId) {
+            return;
+        }
+
+        const deltaX = event.clientX - pan.startX;
+        const deltaY = event.clientY - pan.startY;
+
+        if (!pan.moved && Math.hypot(deltaX, deltaY) < 4) {
+            return;
+        }
+
+        pan.moved = true;
+        event.preventDefault();
+        if (pan.canScrollHorizontally) {
+            syncHorizontalScroll(pan.startScrollLeft - deltaX);
+        }
+
+        if (pan.canScrollVertically && scheduleContentRef.current) {
+            const maxScrollTop = Math.max(
+                0,
+                scheduleContentRef.current.scrollHeight - scheduleContentRef.current.clientHeight
+            );
+            scheduleContentRef.current.scrollTop = Math.min(
+                maxScrollTop,
+                Math.max(0, pan.startScrollTop - deltaY)
+            );
+        }
+        setIsPanning(true);
+    };
+
+    const finishGridPan = (event: React.PointerEvent<HTMLDivElement>) => {
+        const pan = panRef.current;
+
+        if (!pan || pan.pointerId !== event.pointerId) {
+            return;
+        }
+
+        suppressClickRef.current = pan.moved;
+        panRef.current = null;
+        setIsPanning(false);
+        event.currentTarget.releasePointerCapture?.(event.pointerId);
+    };
+
+    const suppressDraggedLinkClick = (event: React.MouseEvent<HTMLDivElement>) => {
+        if (suppressClickRef.current) {
+            event.preventDefault();
+            event.stopPropagation();
+            suppressClickRef.current = false;
+        }
+    };
+
+    const syncHorizontalScroll = (scrollLeft: number) => {
+        const viewport = viewportRef.current;
+        const maxScrollLeft = viewport
+            ? Math.max(0, viewport.scrollWidth - viewport.clientWidth)
+            : Math.max(
+                  0,
+                  (horizontalScrollRef.current?.scrollWidth ?? 0) -
+                      (horizontalScrollRef.current?.clientWidth ?? 0)
+              );
+        const boundedScrollLeft = Math.min(Math.max(0, scrollLeft), maxScrollLeft);
+
+        writeStoredValue(horizontalScrollStorageKey, boundedScrollLeft);
+
+        if (viewport && viewport.scrollLeft !== boundedScrollLeft) {
+            viewport.scrollLeft = boundedScrollLeft;
+        }
+
+        if (
+            horizontalScrollRef.current &&
+            horizontalScrollRef.current.scrollLeft !== boundedScrollLeft
+        ) {
+            horizontalScrollRef.current.scrollLeft = boundedScrollLeft;
         }
 
         if (roomHeaderRef.current) {
-            roomHeaderRef.current.style.transform = `translateX(-${scrollLeft}px)`;
+            roomHeaderRef.current.style.transform = `translateX(-${boundedScrollLeft}px)`;
         }
     };
 
@@ -242,7 +449,18 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
     const calendarBodyHeight =
         orientation === CalendarOrientation.Rooms
             ? timelineHeight
-            : calendarRows.length * calendarRoomRowHeight;
+            : Math.max(availableHeight, rooms.length * calendarRoomRowHeight);
+    const getCalendarRowHeight = (rowIndex: number) =>
+        orientation === CalendarOrientation.Times &&
+        rowIndex === calendarRows.length - 1 &&
+        calendarRows.length > rooms.length
+            ? Math.max(0, calendarBodyHeight - rowIndex * calendarRoomRowHeight)
+            : calendarRoomRowHeight;
+    const calendarRowOffsets = calendarRows.map((_, rowIndex) =>
+        calendarRows
+            .slice(0, rowIndex)
+            .reduce((total, _row, offsetIndex) => total + getCalendarRowHeight(offsetIndex), 0)
+    );
     const calendarLaneOffsetWidth =
         orientation === CalendarOrientation.Rooms ? timeColumnWidth : calendarRoomLabelWidth;
     const calendarLaneWidth =
@@ -281,6 +499,10 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
     }, [hiddenRooms]);
 
     useEffect(() => {
+        writeStoredValue(roomWidthsStorageKey, roomWidthOverrides);
+    }, [roomWidthOverrides]);
+
+    useEffect(() => {
         const viewport = viewportRef.current;
         if (!viewport) {
             return;
@@ -303,6 +525,47 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
 
         return () => observer.disconnect();
     }, []);
+
+    useEffect(() => {
+        const viewport = viewportRef.current;
+        const canvas = calendarCanvasRef.current;
+        const scheduleContent = scheduleContentRef.current;
+
+        if (!viewport) {
+            return;
+        }
+
+        const updateOverflow = () => {
+            setHasHorizontalOverflow(viewport.scrollWidth > viewport.clientWidth + 1);
+            setHasVerticalOverflow(
+                Boolean(
+                    scheduleContent &&
+                    scheduleContent.scrollHeight > scheduleContent.clientHeight + 1
+                )
+            );
+        };
+
+        updateOverflow();
+
+        if (typeof ResizeObserver === "undefined") {
+            return;
+        }
+
+        const observer = new ResizeObserver(updateOverflow);
+        observer.observe(viewport);
+        canvas && observer.observe(canvas);
+        scheduleContent && observer.observe(scheduleContent);
+
+        return () => observer.disconnect();
+    }, [
+        activeDay,
+        availableHeight,
+        availableWidth,
+        filteredEvents.length,
+        hiddenRooms.length,
+        orientation,
+        roomWidthOverrides,
+    ]);
 
     return (
         <CalendarViewWrapper>
@@ -386,7 +649,7 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
                                 </CalendarOrientationArrow>
                             </CalendarOrientationButton>
                             {orientation === CalendarOrientation.Rooms ? (
-                                gridRooms.map((room) => (
+                                gridRooms.map((room, roomIndex) => (
                                     <CalendarRoomLabel
                                         $hidden={
                                             Boolean(room.placeholder) ||
@@ -406,6 +669,30 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
                                             >
                                                 x
                                             </CalendarRoomHide>
+                                        )}
+                                        {!room.placeholder && (
+                                            <CalendarRoomResizeHandle
+                                                type="button"
+                                                aria-label={`Resize ${room.label} column`}
+                                                title={`Resize ${room.label} column`}
+                                                onPointerDown={(event) =>
+                                                    startRoomResize(
+                                                        event,
+                                                        room.value,
+                                                        roomColumnWidths[roomIndex]
+                                                    )
+                                                }
+                                                onPointerMove={moveRoomResize}
+                                                onPointerUp={finishRoomResize}
+                                                onPointerCancel={finishRoomResize}
+                                                onKeyDown={(event) =>
+                                                    resizeRoomWithKeyboard(
+                                                        event,
+                                                        room.value,
+                                                        roomColumnWidths[roomIndex]
+                                                    )
+                                                }
+                                            />
                                         )}
                                     </CalendarRoomLabel>
                                 ))
@@ -430,9 +717,19 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
                     </CalendarRoomHeaderViewport>
                     <CalendarScrollViewport
                         ref={viewportRef}
+                        data-testid="calendar-grid-viewport"
+                        $panning={isPanning}
+                        $dragEnabled={hasHorizontalOverflow || hasVerticalOverflow}
+                        onPointerDown={startGridPan}
+                        onPointerMove={moveGridPan}
+                        onPointerUp={finishGridPan}
+                        onPointerCancel={finishGridPan}
+                        onLostPointerCapture={finishGridPan}
+                        onClickCapture={suppressDraggedLinkClick}
                         onScroll={() => syncHorizontalScroll(viewportRef.current?.scrollLeft ?? 0)}
                     >
                         <CalendarCanvas
+                            ref={calendarCanvasRef}
                             style={{
                                 width: calendarBodyWidth,
                                 height: calendarBodyHeight,
@@ -458,8 +755,11 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
                                 </CalendarGridHours>
                             ) : (
                                 <CalendarGridRoomLabelColumn $height={calendarBodyHeight}>
-                                    {calendarRows.map((room) => (
-                                        <CalendarGridRoomLabel key={room.value}>
+                                    {calendarRows.map((room, roomIndex) => (
+                                        <CalendarGridRoomLabel
+                                            $height={getCalendarRowHeight(roomIndex)}
+                                            key={room.value}
+                                        >
                                             <span>{room.label}</span>
                                             {!room.placeholder && (
                                                 <CalendarRoomHide
@@ -514,7 +814,7 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
                                         {calendarRows.map((room, roomIndex) => (
                                             <CalendarHourLine
                                                 key={room.value}
-                                                style={{ top: roomIndex * calendarRoomRowHeight }}
+                                                style={{ top: calendarRowOffsets[roomIndex] }}
                                             />
                                         ))}
                                     </>
@@ -530,7 +830,7 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
                             </CalendarGridLane>
                         </CalendarCanvas>
                     </CalendarScrollViewport>
-                    {availableWidth > 0 && horizontalCalendarWidth > availableWidth && (
+                    {hasHorizontalOverflow && (
                         <CalendarHorizontalScroll
                             ref={horizontalScrollRef}
                             aria-label={`Scroll calendar ${orientation === CalendarOrientation.Rooms ? "rooms" : "times"} horizontally`}
