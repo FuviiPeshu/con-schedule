@@ -15,13 +15,14 @@ export const fetchSchedule = async (signal?: AbortSignal): Promise<ScheduleRespo
     return (await response.json()) as ScheduleResponse;
 };
 
-/** Flattens all days slots into one array */
+/** Flattens all days slots into one array, ordered by start (with events without start time being last) */
 export const buildScheduleData = (schedule: ScheduleResponse): ScheduleData => {
     const events = schedule.days
         .flatMap((day) => day.slots)
         .sort((a, b) => {
-            if (!a.start) return 1;
-            if (!b.start) return -1;
+            if (!a.start || !b.start) {
+                return Number(!a.start) - Number(!b.start); // move events with start times before those without (Number(!start) = 1 if start is missing, 0 if it exists)
+            }
             return Date.parse(a.start) - Date.parse(b.start);
         });
 

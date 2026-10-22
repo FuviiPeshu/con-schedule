@@ -20,16 +20,19 @@ export type FilterOption = {
     label: string;
 };
 
-export type FilterOptions = Record<keyof ScheduleFilters, FilterOption[]>;
+export type FilterKey = keyof ScheduleFilters;
+export type SelectFilterKey = Exclude<FilterKey, "search">;
+
+export type FilterOptions = Record<SelectFilterKey, FilterOption[]>;
 
 export type FilterAppliedConfig = {
-    filterKey: keyof ScheduleFilters;
+    filterKey: FilterKey;
     label: string;
 };
 
-export type FilterUIConfig = FilterAppliedConfig & {
-    emptyLabel: string;
-};
+export type FilterUIConfig = FilterAppliedConfig & { emptyLabel: string };
+
+export type SelectFilterUIConfig = FilterUIConfig & { filterKey: SelectFilterKey };
 
 export type CalendarDay = {
     value: string;
@@ -47,8 +50,14 @@ export type PositionedEvent = {
     event: EventSlot;
     startMinute: number;
     endMinute: number;
-    occupiedEnd: number;
     roomIndex: number;
+};
+
+export type CompactEventRowData = {
+    dayKey: string;
+    dayLabel: string;
+    timeLabel: string;
+    events: EventSlot[];
 };
 
 export const ScheduleView = {

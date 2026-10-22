@@ -34,4 +34,29 @@ describe("Components / EventCard", () => {
             "/event/621?room=Auditorium&page=2"
         );
     });
+
+    it("should not render a 'stray' zero for events without a duration", () => {
+        render(
+            <MemoryRouter>
+                <EventCardComponent event={{ ...EXAMPLE_EVENT_MOCK_DATA, duration: 0 }} />
+            </MemoryRouter>
+        );
+
+        expect(screen.queryByText("0")).not.toBeInTheDocument();
+        expect(screen.queryByText(/^\(/)).not.toBeInTheDocument();
+    });
+
+    it("should fall back to placeholders for unscheduled events", () => {
+        render(
+            <MemoryRouter>
+                <EventCardComponent
+                    event={{ ...EXAMPLE_EVENT_MOCK_DATA, start: null, end: null, raw_abstract: "" }}
+                />
+            </MemoryRouter>
+        );
+
+        expect(screen.getByText("TBD")).toBeInTheDocument();
+        expect(screen.getByText("Open window")).toBeInTheDocument();
+        expect(screen.getByText(EXAMPLE_EVENT_MOCK_DATA.raw_description)).toBeInTheDocument();
+    });
 });

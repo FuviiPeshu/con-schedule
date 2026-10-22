@@ -14,7 +14,7 @@ import {
 const formatPaginationNumber = (value: number, maximum: number): string =>
     String(value).padStart(String(maximum).length, "0");
 
-type PaginationProps = {
+interface PaginationProps {
     currentPage: number;
     totalPages: number;
     pageStart: number;
@@ -32,7 +32,7 @@ type PaginationProps = {
     position: "top" | "bottom";
     onPageChange: (page: number) => void;
     onPageSizeChange: (value: string) => void;
-};
+}
 
 export const PaginationComponent = ({
     currentPage,

@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 
+import type { EventSlot } from "../../api";
 import { CalendarViewComponent } from "../../components/CalendarView";
 import { ListViewComponent } from "../../components/ListView";
 import { ScheduleFiltersPanel } from "../../components/ScheduleFiltersPanel";
+import { ScheduleViewControlsComponent } from "../../components/ScheduleViewControls";
 import { inputDebounceMs, storagePrefix } from "../../configuration";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { usePersistedState } from "../../hooks/usePersistedState";
 import { useSchedule } from "../../hooks/useSchedule";
 import { useScheduleScroll } from "../../hooks/useScheduleScroll";
 import {
@@ -14,13 +17,15 @@ import {
     ScheduleFilters,
     ScheduleView,
 } from "../../schedule.types";
+import { isScheduleReset } from "../../utils/navigation.utils";
 import { getCalendarDays } from "../../utils/scheduleEvents.utils";
 import {
     emptyFilters,
     eventMatchesFilters,
     getFilterOptions,
 } from "../../utils/scheduleFilters.utils";
-import { readStoredValue, writeStoredValue } from "../../utils/storage.utils";
+import { resolveScheduleView } from "../../utils/scheduleView.utils";
+import { booleanOr, oneOf, readStoredValue, writeStoredValue } from "../../utils/storage.utils";
 import {
     ErrorBanner,
     PageHeader,
@@ -31,11 +36,6 @@ import {
     ScheduleContent,
     SchedulePageShell,
     StatusText,
-    ViewControls,
-    ViewOptionCheckbox,
-    ViewOptionCheckboxInput,
-    ViewToggleButton,
-    ViewToggleContainer,
 } from "./SchedulePage.styled";
 
 const storageKeys = {
@@ -47,42 +47,38 @@ const storageKeys = {
     calendarOrientation: `${storagePrefix}:calendar-orientation`,
 } as const;
 
-const readStoredOption = <T extends string>(key: string, fallback: T, options: readonly T[]): T => {
-    const storedValue = readStoredValue<unknown>(key, fallback);
+const parseScheduleView = oneOf(Object.values(ScheduleView), ScheduleView.List);
+const parseListDisplayMode = oneOf(Object.values(ListDisplayMode), ListDisplayMode.Full);
+const parseCalendarOrientation = oneOf(
+    Object.values(CalendarOrientation),
+    CalendarOrientation.Rooms
+);
 
-    return typeof storedValue === "string" && options.includes(storedValue as T)
-        ? (storedValue as T)
-        : fallback;
-};
+const noEvents: EventSlot[] = []; // stable reference so memos keyed on the events do not rerun while the schedule is loading
 
 export const SchedulePage = () => {
     const [verticalScrollbarWidth, setVerticalScrollbarWidth] = useState(0);
-    const [filtersOpen, setFiltersOpen] = useState(() =>
-        readStoredValue(storageKeys.filtersOpen, true)
+    const [scheduleView, setScheduleView] = useState<ScheduleView>(() =>
+        parseScheduleView(readStoredValue<unknown>(storageKeys.view, undefined))
     );
-    const [scheduleView, setScheduleView] = useState<ScheduleView>(() => {
-        const storedView = readStoredValue<ScheduleView>(storageKeys.view, ScheduleView.List);
-        return Object.values(ScheduleView).includes(storedView) ? storedView : ScheduleView.List;
-    });
-    const [listDisplayMode, setListDisplayMode] = useState<ListDisplayMode>(() =>
-        readStoredOption(
-            storageKeys.listDisplayMode,
-            ListDisplayMode.Full,
-            Object.values(ListDisplayMode)
-        )
+    const [filtersOpen, setFiltersOpen] = usePersistedState(
+        storageKeys.filtersOpen,
+        booleanOr(true)
     );
-    const [calendarOrientation, setCalendarOrientation] = useState<CalendarOrientation>(() =>
-        readStoredOption(
-            storageKeys.calendarOrientation,
-            CalendarOrientation.Rooms,
-            Object.values(CalendarOrientation)
-        )
+    const [listDisplayMode, setListDisplayMode] = usePersistedState(
+        storageKeys.listDisplayMode,
+        parseListDisplayMode
+    );
+    const [calendarOrientation, setCalendarOrientation] = usePersistedState(
+        storageKeys.calendarOrientation,
+        parseCalendarOrientation
     );
 
     const location = useLocation();
     const { data, isLoading, isError } = useSchedule();
     const [searchParams, setSearchParams] = useSearchParams();
     const scheduleContentRef = useRef<HTMLDivElement>(null);
+    const events = data?.events ?? noEvents;
 
     const filters = useMemo<ScheduleFilters>(
         () => ({
@@ -94,50 +90,35 @@ export const SchedulePage = () => {
         }),
         [searchParams]
     );
+    const filterOptions = useMemo(() => getFilterOptions(events), [events]);
+    const hasActiveFilters = Object.values(filters).some(Boolean);
     const debouncedSearch = useDebouncedValue(filters.search, inputDebounceMs);
     const searchForFiltering = filters.search ? debouncedSearch : "";
-    const resetSchedule = location.state?.resetSchedule === true;
-    const activeScheduleView: ScheduleView = resetSchedule
-        ? ScheduleView.List
-        : searchParams.has("date") && !searchParams.has("page")
-          ? ScheduleView.Calendar
-          : searchParams.has("page")
-            ? ScheduleView.List
-            : scheduleView;
-    const events = data?.events ?? [];
-    const hasActiveFilters = Object.values(filters).some(Boolean);
-    const filterOptions = useMemo(() => getFilterOptions(events), [events]);
-    const appliedFilters = useMemo(
+    const resetSchedule = isScheduleReset(location.state);
+    const activeScheduleView = resolveScheduleView({
+        searchParams,
+        reset: resetSchedule,
+        storedView: scheduleView,
+    });
+    const scrollStorageKey =
+        activeScheduleView === ScheduleView.Calendar
+            ? storageKeys.calendarScrollY
+            : storageKeys.listScrollY;
+
+    const appliedFilters = useMemo<ScheduleFilters>(
         () => ({
-            ...filters,
-            date:
-                activeScheduleView === ScheduleView.List &&
-                searchParams.has("date") &&
-                searchParams.has("page")
-                    ? ""
-                    : filters.date,
+            room: filters.room,
+            date: "",
+            tag: filters.tag,
+            speaker: filters.speaker,
             search: searchForFiltering,
         }),
-        [
-            activeScheduleView,
-            filters.date,
-            filters.room,
-            filters.speaker,
-            filters.tag,
-            searchForFiltering,
-            searchParams,
-        ]
+        [filters.room, filters.tag, filters.speaker, searchForFiltering]
     );
     const filteredEvents = useMemo(
         () => events.filter((event) => eventMatchesFilters(event, appliedFilters)),
         [events, appliedFilters]
     );
-    const filteredCalendarDays = useMemo(() => getCalendarDays(filteredEvents), [filteredEvents]);
-
-    const scrollStorageKey =
-        activeScheduleView === ScheduleView.Calendar
-            ? storageKeys.calendarScrollY
-            : storageKeys.listScrollY;
 
     useEffect(() => {
         const scheduleContent = scheduleContentRef.current;
@@ -165,20 +146,8 @@ export const SchedulePage = () => {
     }, [activeScheduleView, appliedFilters, events.length, filteredEvents.length]);
 
     useEffect(() => {
-        writeStoredValue(storageKeys.filtersOpen, filtersOpen);
-    }, [filtersOpen]);
-
-    useEffect(() => {
         writeStoredValue(storageKeys.view, activeScheduleView);
     }, [activeScheduleView]);
-
-    useEffect(() => {
-        writeStoredValue(storageKeys.listDisplayMode, listDisplayMode);
-    }, [listDisplayMode]);
-
-    useEffect(() => {
-        writeStoredValue(storageKeys.calendarOrientation, calendarOrientation);
-    }, [calendarOrientation]);
 
     useEffect(() => {
         if (typeof window.matchMedia !== "function") {
@@ -205,15 +174,26 @@ export const SchedulePage = () => {
         restoreKey: events.length,
     });
 
-    const updateSearchParams = (update: (params: URLSearchParams) => void) => {
-        setSearchParams(
-            (currentParams) => {
-                const nextParams = new URLSearchParams(currentParams);
-                update(nextParams);
-                return nextParams;
-            },
-            { replace: true }
-        );
+    const updateSearchParams = useCallback(
+        (update: (params: URLSearchParams) => void) => {
+            setSearchParams(
+                (currentParams) => {
+                    const nextParams = new URLSearchParams(currentParams);
+                    update(nextParams);
+                    return nextParams;
+                },
+                { replace: true }
+            );
+        },
+        [setSearchParams]
+    );
+
+    const resetPagePosition = (params: URLSearchParams) => {
+        if (activeScheduleView === ScheduleView.List) {
+            params.set("page", "1");
+        } else {
+            params.delete("page");
+        }
     };
 
     const setFilterValue = (filter: keyof ScheduleFilters, value: string) => {
@@ -224,11 +204,7 @@ export const SchedulePage = () => {
                 nextParams.delete(filter);
             }
 
-            if (activeScheduleView === ScheduleView.List) {
-                nextParams.set("page", "1");
-            } else {
-                nextParams.delete("page");
-            }
+            resetPagePosition(nextParams);
         });
     };
 
@@ -238,27 +214,27 @@ export const SchedulePage = () => {
                 nextParams.delete(filter)
             );
 
-            if (activeScheduleView === ScheduleView.List) {
-                nextParams.set("page", "1");
-            } else {
-                nextParams.delete("page");
-            }
+            resetPagePosition(nextParams);
         });
     };
 
-    const setScheduleViewAndScroll = (view: ScheduleView) => {
+    const changeScheduleView = (view: ScheduleView) => {
+        const firstMatchingDay =
+            view === ScheduleView.Calendar ? getCalendarDays(filteredEvents)[0]?.value : undefined;
+
         setScheduleView(view);
 
         updateSearchParams((nextParams) => {
             if (view === ScheduleView.List) {
                 nextParams.set("page", "1");
                 nextParams.delete("date");
-            } else {
-                nextParams.delete("page");
-                const firstFilteredDay = filteredCalendarDays[0]?.value;
-                if (firstFilteredDay) {
-                    nextParams.set("date", firstFilteredDay);
-                }
+                return;
+            }
+
+            nextParams.delete("page");
+
+            if (firstMatchingDay) {
+                nextParams.set("date", firstMatchingDay);
             }
         });
 
@@ -298,50 +274,18 @@ export const SchedulePage = () => {
                             </PageTitle>
                             <PageSummary>All times shown in convention local time.</PageSummary>
                         </div>
-                        <ViewControls>
-                            <ViewToggleContainer role="group" aria-label="Schedule view">
-                                <ViewToggleButton
-                                    type="button"
-                                    $active={activeScheduleView === ScheduleView.List}
-                                    aria-pressed={activeScheduleView === ScheduleView.List}
-                                    onClick={() => setScheduleViewAndScroll(ScheduleView.List)}
-                                >
-                                    List
-                                </ViewToggleButton>
-                                <ViewToggleButton
-                                    type="button"
-                                    $active={activeScheduleView === ScheduleView.Calendar}
-                                    aria-pressed={activeScheduleView === ScheduleView.Calendar}
-                                    onClick={() => setScheduleViewAndScroll(ScheduleView.Calendar)}
-                                >
-                                    Calendar
-                                </ViewToggleButton>
-                            </ViewToggleContainer>
-                            {activeScheduleView === ScheduleView.List && (
-                                <ViewOptionCheckbox>
-                                    <ViewOptionCheckboxInput
-                                        type="checkbox"
-                                        checked={listDisplayMode === ListDisplayMode.Compact}
-                                        onChange={(event) =>
-                                            setListDisplayMode(
-                                                event.target.checked
-                                                    ? ListDisplayMode.Compact
-                                                    : ListDisplayMode.Full
-                                            )
-                                        }
-                                    />
-                                    Compact view
-                                </ViewOptionCheckbox>
-                            )}
-                        </ViewControls>
+                        <ScheduleViewControlsComponent
+                            view={activeScheduleView}
+                            onViewChange={changeScheduleView}
+                            listDisplayMode={listDisplayMode}
+                            onListDisplayModeChange={setListDisplayMode}
+                        />
                     </PageHeader>
                     {activeScheduleView === ScheduleView.Calendar ? (
                         <CalendarViewComponent
                             events={events}
                             filteredEvents={filteredEvents}
                             scheduleContentRef={scheduleContentRef}
-                            filters={filters}
-                            appliedFilters={appliedFilters}
                             updateSearchParams={updateSearchParams}
                             orientation={calendarOrientation}
                             onOrientationChange={setCalendarOrientation}

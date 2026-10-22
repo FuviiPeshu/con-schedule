@@ -1,12 +1,12 @@
 import { FilterInput, FilterLabel } from "./Filters.styled";
 
-export type FilterInputComponentProps = {
+export interface FilterInputComponentProps {
     label: string;
     value: string;
     placeholder?: string;
     inputType?: React.HTMLInputTypeAttribute;
     onChange: (value: string) => void;
-};
+}
 
 export const FilterInputComponent = ({
     label,

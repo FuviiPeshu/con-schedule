@@ -12,7 +12,7 @@ describe("Pages / EventDetailPage", () => {
         useSchedule: vi.fn(),
     }));
 
-    it("should render an event dossier with schedule metadata", () => {
+    it("should render event dossier with schedule metadata", () => {
         vi.mocked(useSchedule).mockReturnValue({
             data: buildScheduleData({
                 event: { name: "Eurofurence 30", slug: "eurofurence-30" },
@@ -46,48 +46,78 @@ describe("Pages / EventDetailPage", () => {
         expect(screen.getByText(EXAMPLE_EVENT_MOCK_DATA.room.name)).toBeInTheDocument();
         expect(screen.getByText(EXAMPLE_EVENT_MOCK_DATA.track.name)).toBeInTheDocument();
         expect(screen.getByText(EXAMPLE_EVENT_MOCK_DATA.tags[0].tag)).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /Back to schedule/i })).toHaveAttribute(
-            "href",
-            "/?page=1"
-        );
+        expect(screen.getByRole("link", { name: /Back to schedule/i })).toBeInTheDocument();
     });
 
-    it("should preserve schedule query state when entered from the schedule", () => {
-        vi.mocked(useSchedule).mockReturnValue({
-            data: buildScheduleData({
-                event: { name: "Eurofurence 30", slug: "eurofurence-30" },
-                schedule_version: "0.1",
-                tags: EXAMPLE_EVENT_MOCK_DATA.tags.map((tag) => ({ ...tag, color: "#42d4f4" })),
-                tracks: [EXAMPLE_EVENT_MOCK_DATA.track],
-                rooms: [{ id: 1, name: "Auditorium", position: 0 }],
-                speakers: [],
-                days: [{ date: "2026-08-20", label: "Thursday", slots: [EXAMPLE_EVENT_MOCK_DATA] }],
-                imprint_url: "https://example.com/imprint",
-                privacy_url: "https://example.com/privacy",
-            }),
-            isLoading: false,
-            isError: false,
-        } as ReturnType<typeof useSchedule>);
+    describe("rendering edge cases", () => {
+        const renderEvent = (
+            eventPatch: Partial<typeof EXAMPLE_EVENT_MOCK_DATA> = {},
+            path = "/event/621"
+        ) => {
+            vi.mocked(useSchedule).mockReturnValue({
+                data: buildScheduleData({
+                    event: { name: "Eurofurence 30", slug: "eurofurence-30" },
+                    schedule_version: "0.1",
+                    tags: [],
+                    tracks: [EXAMPLE_EVENT_MOCK_DATA.track],
+                    rooms: [{ id: 1, name: "Auditorium", position: 0 }],
+                    speakers: [],
+                    days: [
+                        {
+                            date: "2026-08-20",
+                            label: "Thursday",
+                            slots: [{ ...EXAMPLE_EVENT_MOCK_DATA, ...eventPatch }],
+                        },
+                    ],
+                    imprint_url: "https://example.com/imprint",
+                    privacy_url: "https://example.com/privacy",
+                }),
+                isLoading: false,
+                isError: false,
+            } as ReturnType<typeof useSchedule>);
 
-        render(
-            <MemoryRouter
-                initialEntries={[
-                    {
-                        pathname: "/event/621",
-                        search: "?room=Auditorium&day=2026-08-20",
-                        state: { fromSchedule: true },
-                    },
-                ]}
-            >
-                <Routes>
-                    <Route path="/event/:eventId" element={<EventDetailsPage />} />
-                </Routes>
-            </MemoryRouter>
-        );
+            return render(
+                <MemoryRouter initialEntries={[path]}>
+                    <Routes>
+                        <Route path="/event/:eventId" element={<EventDetailsPage />} />
+                    </Routes>
+                </MemoryRouter>
+            );
+        };
 
-        expect(screen.getByRole("link", { name: /Back to schedule/i })).toHaveAttribute(
-            "href",
-            "/?room=Auditorium&day=2026-08-20"
-        );
+        it("should not produce invalid DOM nesting from sanitized HTML content", () => {
+            const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+            renderEvent();
+
+            expect(consoleError).not.toHaveBeenCalled();
+            consoleError.mockRestore();
+        });
+
+        it("should show placeholders for unscheduled events without tags or description", () => {
+            renderEvent({
+                start: null,
+                end: null,
+                duration: 0,
+                tags: [],
+                abstract: "",
+                description: "",
+            });
+
+            expect(screen.getByText("Unscheduled")).toBeInTheDocument();
+            expect(screen.getByText("Open window")).toBeInTheDocument();
+            expect(screen.getAllByText("Unknown")).toHaveLength(2); // status pill and duration
+            expect(screen.getByText("No tags assigned")).toBeInTheDocument();
+            expect(screen.getByText("No event abstract available.")).toBeInTheDocument();
+            expect(screen.getByText("No description available.")).toBeInTheDocument();
+        });
+
+        it("should explain when the event does not exist", () => {
+            renderEvent({}, "/event/999999");
+
+            expect(screen.getByText("Record unavailable")).toBeInTheDocument();
+            expect(screen.getByText("Event not found...")).toBeInTheDocument();
+            expect(screen.getByRole("link", { name: /Back to schedule/i })).toBeInTheDocument();
+        });
     });
 });

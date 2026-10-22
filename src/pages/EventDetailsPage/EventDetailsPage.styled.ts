@@ -1,31 +1,7 @@
-import { Link } from "react-router-dom";
 import { styled } from "styled-components";
 
 import { EventState } from "../../schedule.types";
 import { theme } from "../../styles/theme";
-
-export const BackLink = styled(Link)`
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin-left: 16px;
-    margin-bottom: 16px;
-    color: ${theme.primaryAccent};
-    cursor: pointer;
-    font-size: 0.64rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    text-decoration: none;
-
-    &:hover {
-        color: ${theme.primaryAction};
-    }
-`;
-
-export const BackArrow = styled.span`
-    color: ${theme.primaryAction};
-    font-size: 1rem;
-`;
 
 export const Panel = styled.article`
     display: flex;
@@ -121,11 +97,14 @@ export const DetailsTitle = styled.h1`
     }
 `;
 
-export const EventAbstract = styled.p`
-    margin: 0;
+export const EventAbstract = styled.div`
     color: ${theme.textAccent};
     font-size: 1.2rem;
     line-height: 1.4;
+
+    p {
+        margin: 0;
+    }
 `;
 
 export const InfoBlockGrid = styled.div`
@@ -255,6 +234,18 @@ export const MetaList = styled.ul`
     margin: 0;
     padding: 0;
     color: ${theme.text};
+    list-style: none;
+`;
+
+export const SpeakerList = styled.ul`
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    color: ${theme.text};
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
     list-style: none;
 `;
 

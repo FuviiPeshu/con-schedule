@@ -171,4 +171,28 @@ describe("Utils / Schedule Filters", () => {
             )
         ).toBe(false);
     });
+
+    it("should assign after-midnight events to the schedule day they belong to", () => {
+        const afterMidnightEvent = {
+            ...openingEvent,
+            start: "2026-08-21T02:00:00+02:00",
+            end: "2026-08-21T03:00:00+02:00",
+        };
+
+        expect(getEventDate(afterMidnightEvent)).toBe("2026-08-20");
+        expect(eventMatchesFilters(afterMidnightEvent, withFilters({ date: "2026-08-20" }))).toBe(
+            true
+        );
+        expect(eventMatchesFilters(afterMidnightEvent, withFilters({ date: "2026-08-21" }))).toBe(
+            false
+        );
+        expect(getFilterOptions([afterMidnightEvent]).date).toEqual([
+            { value: "2026-08-20", label: "2026-08-20" },
+        ]);
+    });
+
+    it("should treat regular expression characters in the search as plain text", () => {
+        expect(eventMatchesFilters(openingEvent, withFilters({ search: ".*" }))).toBe(false);
+        expect(eventMatchesFilters(openingEvent, withFilters({ search: "(opening" }))).toBe(false);
+    });
 });

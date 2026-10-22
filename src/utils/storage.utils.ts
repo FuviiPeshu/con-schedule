@@ -1,8 +1,4 @@
-/** Function for storing values (in localStorage)
- * @template T Type of the value to store
- * @param key Key under which the value should be stored
- * @param value Value to store
- */
+/** Writes JSON value to localStorage when storage is available */
 export const writeStoredValue = <T>(key: string, value: T): void => {
     if (typeof window === "undefined" || !window.localStorage) {
         return;
@@ -15,12 +11,7 @@ export const writeStoredValue = <T>(key: string, value: T): void => {
     }
 };
 
-/** Function for retrieving stored values (from localStorage) with a fallback
- * @template T Expected type of the stored value
- * @param key Key under which the value is stored
- * @param fallback Value to return if the stored value is not found or cannot be parsed
- * @returns stored value if available and parseable, fallback otherwise
- */
+/** Reads JSON value, falling back when storage is missing, unavailable, or malformed */
 export const readStoredValue = <T>(key: string, fallback: T): T => {
     if (typeof window === "undefined" || !window.localStorage) {
         return fallback;
@@ -34,3 +25,15 @@ export const readStoredValue = <T>(key: string, fallback: T): T => {
         return fallback;
     }
 };
+
+/** Creates parser that accepts only one of the listed options and otherwise returns the fallback */
+export const oneOf =
+    <T extends string | number>(options: readonly T[], fallback: T) =>
+    (stored: unknown): T =>
+        options.includes(stored as T) ? (stored as T) : fallback;
+
+/** Creates parser that accepts only booleans and otherwise returns the fallback */
+export const booleanOr =
+    (fallback: boolean) =>
+    (stored: unknown): boolean =>
+        typeof stored === "boolean" ? stored : fallback;

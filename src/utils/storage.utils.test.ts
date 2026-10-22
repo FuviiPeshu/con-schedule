@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { readStoredValue, writeStoredValue } from "./storage.utils";
+import { booleanOr, oneOf, readStoredValue, writeStoredValue } from "./storage.utils";
 
 const createStorageMock = (): Storage => {
     const values = new Map<string, string>();
@@ -77,5 +77,23 @@ describe("Utils / Storage", () => {
 
         expect(() => writeStoredValue("unavailable", true)).not.toThrow();
         expect(readStoredValue("unavailable", false)).toBe(false);
+    });
+
+    it("should accept only listed options when parsing stored values", () => {
+        const parseSize = oneOf([5, 10, "full-day"] as const, 10);
+
+        expect(parseSize(5)).toBe(5);
+        expect(parseSize("full-day")).toBe("full-day");
+        expect(parseSize(7)).toBe(10);
+        expect(parseSize("5")).toBe(10);
+        expect(parseSize(undefined)).toBe(10);
+        expect(parseSize(null)).toBe(10);
+    });
+
+    it("should accept only booleans when parsing stored values", () => {
+        expect(booleanOr(true)(false)).toBe(false);
+        expect(booleanOr(false)(true)).toBe(true);
+        expect(booleanOr(true)("false")).toBe(true);
+        expect(booleanOr(false)(undefined)).toBe(false);
     });
 });

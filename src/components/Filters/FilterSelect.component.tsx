@@ -1,13 +1,13 @@
 import type { FilterOption } from "../../schedule.types";
 import { FilterLabel, FilterSelect } from "./Filters.styled";
 
-export type FilterSelectComponentProps = {
+export interface FilterSelectComponentProps {
     label: string;
     value: string;
     options: FilterOption[];
     emptyLabel: string;
     onChange: (value: string) => void;
-};
+}
 
 export const FilterSelectComponent = ({
     label,

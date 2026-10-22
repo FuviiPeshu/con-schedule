@@ -3,8 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EventState } from "../schedule.types";
 import {
     formatCountdown,
+    formatEventDate,
     formatEventDuration,
     formatEventTime,
+    formatScheduleDay,
+    getEventLocalMinutes,
     getEventState,
     getFeedState,
     getScheduleDayKey,
@@ -159,5 +162,49 @@ describe("Utils / getEventState", () => {
         expect(getEventState(null, null)).toBe(EventState.Unknown);
         expect(getEventState("2026-08-20T16:00:00+02:00", null)).toBe(EventState.Unknown);
         expect(getEventState(null, "2026-08-20T17:00:00+02:00")).toBe(EventState.Unknown);
+    });
+});
+
+describe("Utils / getEventLocalMinutes", () => {
+    it("should return minutes since local midnight in the configured timezone", () => {
+        expect(getEventLocalMinutes("2026-08-20T14:50:00Z")).toBe(16 * 60 + 50);
+        expect(getEventLocalMinutes("2026-08-20T22:30:00Z")).toBe(30);
+    });
+});
+
+describe("Utils / day labels", () => {
+    it("should keep day number attached to the month", () => {
+        expect(formatScheduleDay("2026-08-20")).toBe("Thursday, Aug\u00A020");
+        expect(formatEventDate("2026-08-20T14:50:00Z")).toBe("Thursday, Aug\u00A020");
+    });
+
+    it("should label events by their local date rather than the UTC date", () => {
+        expect(formatEventDate("2026-08-20T22:30:00Z")).toBe("Friday, Aug\u00A021");
+    });
+});
+
+describe("Utils / formatCountdown edge cases", () => {
+    it("should never go below zero once the target has passed", () => {
+        expect(
+            formatCountdown(new Date("2027-08-18T00:00:00Z"), new Date("2027-08-18T00:00:05Z"))
+        ).toBe("T-0d 00:00:00");
+    });
+
+    it("should round partial seconds up", () => {
+        expect(
+            formatCountdown(new Date("2027-08-18T00:00:00.500Z"), new Date("2027-08-18T00:00:00Z"))
+        ).toBe("T-0d 00:00:01");
+    });
+});
+
+describe("Utils / getFeedState edge cases", () => {
+    it("should stay live when no start or end is configured", () => {
+        expect(getFeedState(new Date("2027-01-01T00:00:00Z"), null, null)).toBe("Live");
+    });
+
+    it("should treat final millisecond of the end day as live", () => {
+        expect(getFeedState(new Date("2027-08-22T21:59:59.999Z"), "2027-08-18", "2027-08-22")).toBe(
+            "Live"
+        );
     });
 });

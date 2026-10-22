@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type FocusEvent, type MouseEvent } from "react";
+import { useMemo } from "react";
 
 import { appliedFilterConfigs } from "../../configuration";
+import { useExpandedFilter } from "../../hooks/useExpandedFilter";
 import type { ScheduleFilters } from "../../schedule.types";
-import { containsNode } from "../../utils/dom.utils";
 import {
     AppliedFilterCompact,
     AppliedFiltersClear,
@@ -35,10 +35,6 @@ export const AppliedFiltersComponent = ({
     onClear,
     compact = false,
 }: AppliedFiltersProps) => {
-    const [expandedFilter, setExpandedFilter] = useState<keyof ScheduleFilters | null>(null);
-    const [fadingFilter, setFadingFilter] = useState<keyof ScheduleFilters | null>(null);
-
-    const collapseTimerRef = useRef<number | null>(null);
     const appliedFilters = useMemo(
         () =>
             appliedFilterConfigs.flatMap(({ filterKey, label }) => {
@@ -48,97 +44,25 @@ export const AppliedFiltersComponent = ({
         [filters]
     );
 
-    const clearCollapseTimer = () => {
-        if (collapseTimerRef.current !== null) {
-            window.clearTimeout(collapseTimerRef.current);
-            collapseTimerRef.current = null;
-        }
-    };
-
-    const expandFilter = (filterKey: keyof ScheduleFilters) => {
-        clearCollapseTimer();
-        setExpandedFilter(filterKey);
-        setFadingFilter(null);
-    };
-
-    const beginCollapse = (filterKey: keyof ScheduleFilters) => {
-        if (expandedFilter !== filterKey) {
-            return;
-        }
-
-        clearCollapseTimer();
-        setFadingFilter(filterKey);
-        collapseTimerRef.current = window.setTimeout(() => {
-            setExpandedFilter((currentFilter) =>
-                currentFilter === filterKey ? null : currentFilter
-            );
-            setFadingFilter((currentFilter) =>
-                currentFilter === filterKey ? null : currentFilter
-            );
-            collapseTimerRef.current = null;
-        }, 500);
-    };
-
-    const keepExpanded = (filterKey: keyof ScheduleFilters) => {
-        if (expandedFilter !== filterKey) {
-            return;
-        }
-
-        clearCollapseTimer();
-        setFadingFilter(null);
-    };
-
-    const handleMouseLeave = (filterKey: keyof ScheduleFilters, event: MouseEvent<HTMLElement>) => {
-        const isFocused = event.currentTarget.contains(document.activeElement);
-        if (isFocused || containsNode(event.currentTarget, event.relatedTarget)) {
-            return;
-        }
-
-        beginCollapse(filterKey);
-    };
-
-    const handleBlur = (filterKey: keyof ScheduleFilters, event: FocusEvent<HTMLElement>) => {
-        const isHoveredOn = event.currentTarget.matches(":hover");
-        if (isHoveredOn || containsNode(event.currentTarget, event.relatedTarget)) {
-            return;
-        }
-
-        beginCollapse(filterKey);
-    };
+    const {
+        expandedFilter,
+        fadingFilter,
+        expandFilter,
+        keepExpanded,
+        handleMouseLeave,
+        handleBlur,
+        collapse,
+    } = useExpandedFilter({ enabled: compact, activeFilters: appliedFilters });
 
     const handleRemove = (filterKey: keyof ScheduleFilters) => {
-        clearCollapseTimer();
-        setExpandedFilter(null);
-        setFadingFilter(null);
+        collapse();
         onRemove(filterKey);
     };
 
     const handleClear = () => {
-        clearCollapseTimer();
-        setExpandedFilter(null);
-        setFadingFilter(null);
+        collapse();
         onClear?.();
     };
-
-    useEffect(() => {
-        if (
-            !compact ||
-            (expandedFilter !== null &&
-                !appliedFilters.some((entry) => entry.filterKey === expandedFilter))
-        ) {
-            clearCollapseTimer();
-            setExpandedFilter(null);
-            setFadingFilter(null);
-        }
-    }, [compact, appliedFilters, expandedFilter]);
-
-    useEffect(() => {
-        return () => {
-            if (collapseTimerRef.current !== null) {
-                window.clearTimeout(collapseTimerRef.current);
-            }
-        };
-    }, []);
 
     return compact && appliedFilters.length === 0 ? null : (
         <AppliedFiltersWrapper

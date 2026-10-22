@@ -4,38 +4,62 @@ import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { conNewDayEventStartTime, conTimeZone } from "../configuration";
 import { EventState, FeedState } from "../schedule.types";
 
-/** Formats ISO event time in the configured local timezone */
-export const formatEventTime = (dateTimeIso: string): string =>
-    formatInTimeZone(new Date(dateTimeIso), conTimeZone, "HH:mm");
-
-/** Formats ISO event date in the configured local timezone */
-export const formatEventDate = (dateTimeIso: string): string =>
-    formatInTimeZone(new Date(dateTimeIso), conTimeZone, "EEEE, MMM d").replace(
-        / (?=\S+$)/,
-        "\u00A0"
-    );
-
-/** Formats a schedule day key into a readable local date string */
-export const formatScheduleDay = (dayKey: string): string =>
-    formatInTimeZone(
-        fromZonedTime(`${dayKey}T12:00:00`, conTimeZone),
-        conTimeZone,
-        "EEEE, MMM d"
-    ).replace(/ (?=\S+$)/, "\u00A0");
-
-/** Gets the total event time in minutes (from datetime string) */
-export const getEventLocalMinutes = (dateTimeIso: string): number => {
-    const [hours, minutes] = formatEventTime(dateTimeIso).split(":").map(Number);
-    return hours * 60 + minutes;
-};
-
 /** Parses clocklike time string (HH:mm) into total minutes */
 export const parseClockTime = (time: string): number => {
     const [hours, minutes] = time.split(":").map(Number);
     return hours * 60 + minutes;
 };
 
-/** Converts local date key into UTC Date at noon */
+type LocalDateTime = { dateKey: string; time: string; minutes: number };
+
+const localDateTimeCache = new Map<string, LocalDateTime>(); // timezone formatting is slow and schedule helpers hit the same few hundred timestamps repeatedly
+
+/** Parses each ISO timestamp once in the convention timezone, then reuses its local parts */
+const getLocalDateTime = (dateTimeIso: string): LocalDateTime => {
+    const cached = localDateTimeCache.get(dateTimeIso);
+
+    if (cached) {
+        return cached;
+    }
+
+    const [dateKey, time] = formatInTimeZone(
+        new Date(dateTimeIso),
+        conTimeZone,
+        "yyyy-MM-dd HH:mm"
+    ).split(" ");
+    const localDateTime = { dateKey, time, minutes: parseClockTime(time) };
+
+    localDateTimeCache.set(dateTimeIso, localDateTime);
+
+    return localDateTime;
+};
+
+/** Replaces the space before the day number so "Aug 20" never wraps */
+const keepDayNumberAttached = (formattedDate: string): string =>
+    formattedDate.replace(/ (?=\S+$)/, "\u00A0");
+
+/** Formats ISO timestamp as convention-local HH:mm */
+export const formatEventTime = (dateTimeIso: string): string => getLocalDateTime(dateTimeIso).time;
+
+/** Formats ISO timestamp as a convention-local date */
+export const formatEventDate = (dateTimeIso: string): string =>
+    keepDayNumberAttached(formatInTimeZone(new Date(dateTimeIso), conTimeZone, "EEEE, MMM d"));
+
+/** Formats convention-day key as a readable local date */
+export const formatScheduleDay = (dayKey: string): string =>
+    keepDayNumberAttached(
+        formatInTimeZone(
+            fromZonedTime(`${dayKey}T12:00:00`, conTimeZone),
+            conTimeZone,
+            "EEEE, MMM d"
+        )
+    );
+
+/** Gets total event time in minutes (from datetime string) */
+export const getEventLocalMinutes = (dateTimeIso: string): number =>
+    getLocalDateTime(dateTimeIso).minutes;
+
+/** Uses UTC noon to shift date keys without timezone or DST rollover */
 const localDateAsUtcNoon = (dateKey: string): Date => new Date(`${dateKey}T12:00:00Z`);
 
 /** Formats UTC Date as local date key (yyyy-MM-dd) */
@@ -45,13 +69,7 @@ const formatUtcDateKey = (date: Date): string => date.toISOString().slice(0, 10)
 export const parseConventionDate = (date: string, endOfDay = false): Date =>
     fromZonedTime(`${date}T${endOfDay ? "23:59:59.999" : "00:00:00"}`, conTimeZone);
 
-/**
- * Determines current feed state based on the current time and the start and end times of the feed
- * @param now Current datetime
- * @param startDate Start datetime of the feed (ISO string or null)
- * @param endDate End datetime of the feed (ISO string or null)
- * @returns The current feed state ("Countdown", "Live" or "Archive")
- */
+/** Returns Countdown before start, Archive after end, and Live otherwise; missing bounds are open */
 export const getFeedState = (
     now: Date,
     startDate: string | null,
@@ -68,12 +86,7 @@ export const getFeedState = (
     return FeedState.Live;
 };
 
-/**
- * Formats the countdown to a target date from the current date in T-minus format
- * @param target Target datetime
- * @param now Current datetime
- * @returns Countdown string in the format "T-{days}d {hours}:{minutes}:{seconds}"
- */
+/** Formats remaining time as T-{days}d HH:mm:ss, clamped to zero */
 export const formatCountdown = (target: Date, now: Date): string => {
     const totalSeconds = Math.max(0, Math.ceil((target.getTime() - now.getTime()) / 1000));
     const days = Math.floor(totalSeconds / 86_400);
@@ -85,18 +98,14 @@ export const formatCountdown = (target: Date, now: Date): string => {
     return `T-${days}d ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 };
 
-/** Gets the schedule day key for a given ISO datetime (considering the day start time)
- * @param dateTimeIso ISO datetime string of the event
- * @param newDayEventStartTime Local time at which the schedule day starts (default = configured new day start time)
- * @returns Schedule day key ("yyyy-MM-dd" format)
- */
+/** Maps instant to its convention day, using the configured day start (06:00 by default) */
 export const getScheduleDayKey = (
     dateTimeIso: string,
     newDayEventStartTime: string = conNewDayEventStartTime
 ): string => {
-    const localDateKey = formatInTimeZone(new Date(dateTimeIso), conTimeZone, "yyyy-MM-dd");
+    const { dateKey: localDateKey, minutes } = getLocalDateTime(dateTimeIso);
 
-    if (getEventLocalMinutes(dateTimeIso) >= parseClockTime(newDayEventStartTime)) {
+    if (minutes >= parseClockTime(newDayEventStartTime)) {
         return localDateKey;
     }
 
@@ -106,30 +115,22 @@ export const getScheduleDayKey = (
     return formatUtcDateKey(previousDate);
 };
 
-/** Gets the minute offset of an event within its schedule day
- * @param dateTimeIso ISO datetime string of the event
- * @param scheduleDayKey Schedule day key ("yyyy-MM-dd" format)
- * @param newDayEventStartTime Local time at which the schedule day starts (default = configured new day start time)
- * @returns Minute offset of the event within its schedule day
- */
+/** Returns minutes from the configured start of the given convention day */
 export const getScheduleMinuteOffset = (
     dateTimeIso: string,
     scheduleDayKey: string,
     newDayEventStartTime: string = conNewDayEventStartTime
 ): number => {
-    const localDateKey = formatInTimeZone(new Date(dateTimeIso), conTimeZone, "yyyy-MM-dd");
+    const { dateKey: localDateKey, minutes } = getLocalDateTime(dateTimeIso);
     const dayDifference =
         (localDateAsUtcNoon(localDateKey).getTime() -
             localDateAsUtcNoon(scheduleDayKey).getTime()) /
         60_000;
 
-    return dayDifference + getEventLocalMinutes(dateTimeIso) - parseClockTime(newDayEventStartTime);
+    return dayDifference + minutes - parseClockTime(newDayEventStartTime);
 };
 
-/** Formats an event duration from minutes to hours and minutes unless it's less than an hour
- * @param durationMinutes Duration of the event (in minutes)
- * @returns Easy to read event duration string (e.g. "1h 30m" or "45m")
- */
+/** Formats minutes as hours plus remaining minutes when needed */
 export const formatEventDuration = (durationMinutes: number): string => {
     if (durationMinutes < 60) {
         return `${durationMinutes}m`;
@@ -141,13 +142,7 @@ export const formatEventDuration = (durationMinutes: number): string => {
     return minutes === 0 ? `${hours}h` : `${hours}h ${minutes}m`;
 };
 
-/**
- * Determines if an event is currently happening based on its start and end datetimes
- * @param startIso Start datetime of the event (ISO string or null)
- * @param endIso End datetime of the event (ISO string or null)
- * @param now Current datetime (defaults to the current system time)
- * @returns True if the event is _(or should be)_ happening, false otherwise
- */
+/** Returns true when now is within the complete event interval, including both endpoints */
 export const isEventLive = (
     startIso: string | null,
     endIso: string | null,
@@ -159,12 +154,7 @@ export const isEventLive = (
     return isWithinInterval(now, { start: new Date(startIso), end: new Date(endIso) });
 };
 
-/**
- * Determines state of an event based on its start and end datetimes
- * @param start Start datetime of the event (ISO string or null)
- * @param end End datetime of the event (ISO string or null)
- * @returns Current state of the event (EventState - Live, Upcoming, Finished or Unknown)
- */
+/** Classifies event as Upcoming, Live, Finished, or Unknown from its timestamps */
 export const getEventState = (start: string | null, end: string | null): EventState => {
     if (isEventLive(start, end)) {
         return EventState.Live;

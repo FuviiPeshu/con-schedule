@@ -1,5 +1,6 @@
-import { useLocation, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
+import { BackToScheduleLinkComponent } from "../../components/BackToScheduleLink";
 import { useSchedule } from "../../hooks/useSchedule";
 import { EventState } from "../../schedule.types";
 import {
@@ -10,8 +11,6 @@ import {
 } from "../../utils/dateTime.utils";
 import { renderEventHtml } from "../../utils/text.utils";
 import {
-    BackArrow,
-    BackLink,
     DetailsBodySection,
     DetailsHeader,
     DetailsHeaderDetails,
@@ -27,6 +26,7 @@ import {
     MetaList,
     MetaPanel,
     Panel,
+    SpeakerList,
     StatusPill,
     Tag,
     TrackMark,
@@ -34,36 +34,23 @@ import {
 
 export const EventDetailsPage = () => {
     const { eventId } = useParams<{ eventId: string }>();
-    const location = useLocation();
     const { data, isLoading } = useSchedule();
 
-    const openedFromSchedule = location.state?.fromSchedule === true;
     const event = data?.events.find((candidate) => String(candidate.id) === eventId);
+    const eventState = event ? getEventState(event.start, event.end) : EventState.Unknown;
 
     return isLoading ? (
         <Panel>Loading event data...</Panel>
     ) : (
         <Panel>
-            <BackLink
-                to={
-                    openedFromSchedule
-                        ? { pathname: "/", search: location.search }
-                        : { pathname: "/", search: "?page=1" }
-                }
-                state={openedFromSchedule ? { fromSchedule: true } : { resetSchedule: true }}
-            >
-                <BackArrow aria-hidden="true">&lt;</BackArrow>
-                Back to schedule
-            </BackLink>
+            <BackToScheduleLinkComponent fallbackSearch="?page=1" />
             {event ? (
                 <DetailsWrapper>
                     <DetailsHeader $trackColor={event.track.color}>
                         <DetailsHeaderDetails>
                             <span>Event record / {event.code}</span>
-                            <StatusPill $state={getEventState(event.start, event.end)}>
-                                {getEventState(event.start, event.end) === EventState.Live
-                                    ? "Live now"
-                                    : getEventState(event.start, event.end)}
+                            <StatusPill $state={eventState}>
+                                {eventState === EventState.Live ? "Live now" : eventState}
                             </StatusPill>
                         </DetailsHeaderDetails>
                         <DetailsTitle>{event.title}</DetailsTitle>
@@ -118,11 +105,11 @@ export const EventDetailsPage = () => {
                             {event.speakers.length > 0 && (
                                 <MetaPanel>
                                     <InfoLabel>Speakers</InfoLabel>
-                                    <InfoValue>
+                                    <SpeakerList>
                                         {event.speakers.map((speaker) => (
                                             <li key={speaker.code}>{speaker.name}</li>
                                         ))}
-                                    </InfoValue>
+                                    </SpeakerList>
                                 </MetaPanel>
                             )}
                             <MetaPanel>

@@ -10,9 +10,9 @@ const normalizeEmbeddedMarkdownLinks = (value: string): string =>
         (_match, quote: string, url: string) => `href=${quote}${url}${quote}`
     );
 
-/** Normalizes a string (trims whitespace and converts it to lowercase) */
+/** Normalizes string (trims whitespace and converts it to lowercase) */
 export const normalizeText = (value: string): string => value.trim().toLocaleLowerCase();
 
-/** Renders sanitized HTML content */
+/** Sanitizes HTML before converting it to React elements */
 export const renderEventHtml = (value: string): ReturnType<typeof parse> =>
     parse(DOMPurify.sanitize(normalizeEmbeddedMarkdownLinks(value)));

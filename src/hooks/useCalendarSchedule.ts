@@ -1,15 +1,13 @@
 import { useEffect, useMemo } from "react";
 
 import type { EventSlot } from "../api";
-import type { ScheduleFilters } from "../schedule.types";
 import { getCalendarDays } from "../utils/scheduleEvents.utils";
-import { eventMatchesFilters } from "../utils/scheduleFilters.utils";
 
 interface UseCalendarScheduleParams {
     events: EventSlot[];
+    /** Events matching the active result filters (room, tag, speaker, search) */
     filteredEvents: EventSlot[];
-    filters: ScheduleFilters;
-    appliedFilters: ScheduleFilters;
+    /** Day from the `date` query parameter, empty when absent */
     selectedDay: string;
     updateSearchParams: (update: (params: URLSearchParams) => void) => void;
 }
@@ -17,65 +15,23 @@ interface UseCalendarScheduleParams {
 export const useCalendarSchedule = ({
     events,
     filteredEvents,
-    filters,
-    appliedFilters,
     selectedDay,
     updateSearchParams,
 }: UseCalendarScheduleParams) => {
-    const calendarDayEvents = useMemo(() => {
-        if (!filters.date) {
-            return filteredEvents;
-        }
-
-        const filtersWithoutDate = { ...appliedFilters, date: "" };
-
-        return events.filter((event) => eventMatchesFilters(event, filtersWithoutDate));
-    }, [appliedFilters, events, filters.date, filteredEvents]);
     const calendarDays = useMemo(() => getCalendarDays(events), [events]);
-    const matchingCalendarDays = useMemo(
-        () => getCalendarDays(calendarDayEvents),
-        [calendarDayEvents]
-    );
-    const dateFilteredCalendarDays = useMemo(
-        () => getCalendarDays(filteredEvents),
-        [filteredEvents]
-    );
-    const dateFilterCalendarDay = useMemo(() => {
-        if (!filters.date) {
-            return "";
-        }
+    const matchingCalendarDays = useMemo(() => getCalendarDays(filteredEvents), [filteredEvents]);
+    const disabledCalendarDays = useMemo(() => {
+        const matchingDays = new Set(matchingCalendarDays.map((day) => day.value));
 
-        return calendarDays.some((day) => day.value === filters.date)
-            ? filters.date
-            : (dateFilteredCalendarDays[0]?.value ?? calendarDays[0]?.value ?? "");
-    }, [calendarDays, dateFilteredCalendarDays, filters.date]);
-    const hasCalendarResultFilters = Boolean(
-        filters.room || filters.tag || filters.speaker || appliedFilters.search
-    );
-    const disabledCalendarDays = useMemo(
-        () =>
-            hasCalendarResultFilters
-                ? new Set(
-                      calendarDays
-                          .filter(
-                              (day) =>
-                                  !matchingCalendarDays.some(
-                                      (matchingDay) => matchingDay.value === day.value
-                                  )
-                          )
-                          .map((day) => day.value)
-                  )
-                : new Set<string>(),
-        [calendarDays, hasCalendarResultFilters, matchingCalendarDays]
-    );
+        return new Set(
+            calendarDays.filter((day) => !matchingDays.has(day.value)).map((day) => day.value)
+        );
+    }, [calendarDays, matchingCalendarDays]);
 
-    const activeDay = filters.date
-        ? dateFilterCalendarDay
-        : calendarDays.some(
-                (day) => day.value === selectedDay && !disabledCalendarDays.has(day.value)
-            )
-          ? selectedDay
-          : (matchingCalendarDays[0]?.value ?? calendarDays[0]?.value ?? "");
+    // A shared day stays selected even when filters leave it empty; only unknown days fall back
+    const activeDay = calendarDays.some((day) => day.value === selectedDay)
+        ? selectedDay
+        : (matchingCalendarDays[0]?.value ?? calendarDays[0]?.value ?? "");
 
     useEffect(() => {
         if (!activeDay || activeDay === selectedDay) {

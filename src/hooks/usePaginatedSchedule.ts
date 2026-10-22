@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { defaultPageSize, fullDayPageSize, pageSizeOptions, storagePrefix } from "../configuration";
 import type { PageSize } from "../schedule.types";
-import { readStoredValue, writeStoredValue } from "../utils/storage.utils";
+import { oneOf } from "../utils/storage.utils";
+import { usePersistedState } from "./usePersistedState";
 
 const pageSizeStorageKey = `${storagePrefix}:page-size`;
+const parsePageSize = oneOf<PageSize>(pageSizeOptions, defaultPageSize);
 
 const parsePage = (value: string | number | null): number => {
     const page = Number(value);
@@ -32,13 +34,7 @@ export const usePaginatedSchedule = <T>({
     updateSearchParams,
     scheduleContentRef,
 }: UsePaginatedScheduleParams<T>) => {
-    const [pageSize, setPageSize] = useState<PageSize>(() => {
-        const storedPageSize = readStoredValue<unknown>(pageSizeStorageKey, defaultPageSize);
-
-        return pageSizeOptions.includes(storedPageSize as PageSize)
-            ? (storedPageSize as PageSize)
-            : defaultPageSize;
-    });
+    const [pageSize, setPageSize] = usePersistedState(pageSizeStorageKey, parsePageSize);
 
     const currentPageFromParams = parsePage(searchParams.get("page"));
     const groupKeys = useMemo(() => {
@@ -71,10 +67,6 @@ export const usePaginatedSchedule = <T>({
         ? Math.min(currentPage, totalItems)
         : Math.min(pageStartIndex + numericPageSize, totalItems);
 
-    useEffect(() => {
-        writeStoredValue(pageSizeStorageKey, pageSize);
-    }, [pageSize]);
-
     const goToPage = (page: number, pageSizeForParams: PageSize = effectivePageSize) => {
         updateSearchParams((nextParams) => {
             nextParams.set("page", String(page));
@@ -87,18 +79,31 @@ export const usePaginatedSchedule = <T>({
         }
     };
 
-    const setSelectedPageSize = (value: string) => {
-        if (value === fullDayPageSize) {
-            setPageSize(fullDayPageSize);
-            goToPage(1, fullDayPageSize);
-            return;
+    const getPageHoldingCurrentStart = (nextPageSize: PageSize): number => {
+        const firstIndex = isFullDay
+            ? items.findIndex((item) => getGroupKey?.(item) === groupKeys[currentPage - 1])
+            : pageStartIndex;
+
+        if (firstIndex < 0 || firstIndex >= items.length) {
+            return 1;
         }
 
-        const nextPageSize = Number(value);
+        if (nextPageSize === fullDayPageSize) {
+            return Math.max(1, groupKeys.indexOf(getGroupKey?.(items[firstIndex]) ?? "") + 1);
+        }
+
+        return Math.floor(firstIndex / nextPageSize) + 1;
+    };
+
+    const setSelectedPageSize = (value: string) => {
+        const nextPageSize = value === fullDayPageSize ? fullDayPageSize : Number(value);
 
         if (pageSizeOptions.includes(nextPageSize as PageSize)) {
             setPageSize(nextPageSize as PageSize);
-            goToPage(1, nextPageSize as PageSize);
+            goToPage(
+                getPageHoldingCurrentStart(nextPageSize as PageSize),
+                nextPageSize as PageSize
+            );
         }
     };
 

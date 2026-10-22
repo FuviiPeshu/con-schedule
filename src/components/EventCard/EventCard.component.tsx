@@ -2,6 +2,7 @@ import { useLocation } from "react-router-dom";
 
 import type { EventSlot } from "../../api";
 import { formatEventDuration, formatEventTime } from "../../utils/dateTime.utils";
+import { getEventLinkProps } from "../../utils/navigation.utils";
 import {
     CardArrow,
     CardArrowIcon,
@@ -29,14 +30,13 @@ export const EventCardComponent = ({ event }: EventCardProps) => {
 
     return (
         <CardWrapper
-            to={{ pathname: `/event/${event.id}`, search: location.search }}
-            state={{ fromSchedule: true }}
+            {...getEventLinkProps(event.id, location.search)}
             $trackColor={event.track.color}
         >
             <TimeBlock>
                 <TimeStart>{event.start ? formatEventTime(event.start) : "TBD"}</TimeStart>
                 <TimeEnd>{event.end ? `to ${formatEventTime(event.end)}` : "Open window"}</TimeEnd>
-                {event.duration && <Duration>({formatEventDuration(event.duration)})</Duration>}
+                {event.duration > 0 && <Duration>({formatEventDuration(event.duration)})</Duration>}
             </TimeBlock>
             <CardContent>
                 <TitleRow>

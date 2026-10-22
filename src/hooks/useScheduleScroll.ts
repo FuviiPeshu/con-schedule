@@ -1,6 +1,7 @@
-import { useEffect, useRef, type RefObject, type UIEvent } from "react";
+import { useEffect, type RefObject, type UIEvent } from "react";
 
 import { readStoredValue, writeStoredValue } from "../utils/storage.utils";
+import { useThrottledStorageWrite } from "./useThrottledStorageWrite";
 
 interface UseScheduleScrollParams {
     contentRef: RefObject<HTMLDivElement | null>;
@@ -15,8 +16,7 @@ export const useScheduleScroll = ({
     reset,
     restoreKey,
 }: UseScheduleScrollParams) => {
-    const scrollFrameRef = useRef<number | null>(null);
-    const pendingScrollTopRef = useRef(0);
+    const writeScrollTop = useThrottledStorageWrite<number>(storageKey);
 
     useEffect(() => {
         if (contentRef.current) {
@@ -31,25 +31,8 @@ export const useScheduleScroll = ({
     }, [contentRef, reset, restoreKey, storageKey]);
 
     const handleScroll = (event: UIEvent<HTMLDivElement>) => {
-        pendingScrollTopRef.current = event.currentTarget.scrollTop;
-
-        if (scrollFrameRef.current !== null || typeof window === "undefined") {
-            return;
-        }
-
-        scrollFrameRef.current = window.requestAnimationFrame(() => {
-            writeStoredValue(storageKey, pendingScrollTopRef.current);
-            scrollFrameRef.current = null;
-        });
+        writeScrollTop(event.currentTarget.scrollTop);
     };
-
-    useEffect(() => {
-        return () => {
-            if (scrollFrameRef.current !== null) {
-                window.cancelAnimationFrame(scrollFrameRef.current);
-            }
-        };
-    }, []);
 
     return handleScroll;
 };

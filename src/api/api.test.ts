@@ -82,6 +82,22 @@ describe("API / buildScheduleData", () => {
         ]);
     });
 
+    it("should keep events without start times after dated ones in their original order", () => {
+        const slots = [
+            { ...EXAMPLE_EVENT_MOCK_DATA, id: 910, start: null, end: null },
+            { ...EXAMPLE_EVENT_MOCK_DATA, id: 911 },
+            { ...EXAMPLE_EVENT_MOCK_DATA, id: 912, start: null, end: null },
+            { ...EXAMPLE_EVENT_MOCK_DATA, id: 913, start: null, end: null },
+        ];
+
+        const ids = buildScheduleData({
+            ...SCHEDULE_MOCK_DATA,
+            days: [{ ...SCHEDULE_MOCK_DATA.days[0], slots }],
+        }).events.map((event) => event.id);
+
+        expect(ids).toEqual([911, 910, 912, 913]);
+    });
+
     it("should return empty event list for schedule without days", () => {
         expect(buildScheduleData({ ...SCHEDULE_MOCK_DATA, days: [] })).toEqual({ events: [] });
     });

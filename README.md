@@ -1,22 +1,15 @@
 # Con Schedule
 
-Events schedule web app based on public Eurofurence schedule API.
-
-## Stack
-
-- React + TypeScript + Vite
-- styled-components
-- @tanstack/react-query
-- date-fns / date-fns-tz
+Events schedule web app (based on public Eurofurence schedule API).
 
 ## Getting started
 
-```bash
+```
 npm install
 npm run dev         # http://localhost:3003
 npm run prettify    # run prettier across all files
 npm run test        # run all tests once with coverage
-npm run test:watch  # run tests and keep it listening for changes
+npm run test:watch  # run tests and keep listening for changes
 npm run build       # type-check, build
 ```
 

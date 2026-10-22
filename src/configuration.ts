@@ -1,5 +1,10 @@
 import conConfig from "../config/schedule-config.json";
-import type { FilterAppliedConfig, FilterUIConfig, PageSize } from "./schedule.types";
+import type {
+    FilterAppliedConfig,
+    FilterUIConfig,
+    PageSize,
+    SelectFilterUIConfig,
+} from "./schedule.types";
 
 // JS fields for "config/schedule-config.json" values
 export const conName = conConfig.name;
@@ -26,7 +31,7 @@ export const filterInputConfig: FilterUIConfig = {
     filterKey: "search",
     emptyLabel: "Search events",
 } as const;
-export const filterSelectConfigs: FilterUIConfig[] = [
+export const filterSelectConfigs: SelectFilterUIConfig[] = [
     { label: "Room", filterKey: "room", emptyLabel: "All rooms" },
     { label: "Date", filterKey: "date", emptyLabel: "All dates" },
     { label: "Tag", filterKey: "tag", emptyLabel: "All tags" },

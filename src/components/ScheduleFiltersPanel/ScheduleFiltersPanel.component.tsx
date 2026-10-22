@@ -1,4 +1,7 @@
 import { filterInputConfig, filterSelectConfigs } from "../../configuration";
+import type { FilterOptions, ScheduleFilters } from "../../schedule.types";
+import { AppliedFiltersComponent } from "../AppliedFilters";
+import { FilterInputComponent, FilterSelectComponent } from "../Filters";
 import {
     CollapseButton,
     CollapseIcon,
@@ -8,10 +11,7 @@ import {
     FilterHeader,
     FilterPanelTitle,
     ResetButton,
-} from "../../pages/SchedulePage/SchedulePage.styled";
-import type { FilterOptions, ScheduleFilters } from "../../schedule.types";
-import { AppliedFiltersComponent } from "../AppliedFilters";
-import { FilterInputComponent, FilterSelectComponent } from "../Filters";
+} from "./ScheduleFiltersPanel.styled";
 
 interface ScheduleFiltersPanelProps {
     filters: ScheduleFilters;

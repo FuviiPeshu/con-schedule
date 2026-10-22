@@ -5,14 +5,10 @@ import type { EventSlot } from "../../api";
 import { fullDayPageSize } from "../../configuration";
 import { usePaginatedSchedule } from "../../hooks/usePaginatedSchedule";
 import { ListDisplayMode } from "../../schedule.types";
-import type { PageSize } from "../../schedule.types";
-import {
-    formatEventDate,
-    formatEventTime,
-    formatScheduleDay,
-    getScheduleDayKey,
-} from "../../utils/dateTime.utils";
-import { UNSCHEDULED_FILTER } from "../../utils/scheduleFilters.utils";
+import type { CompactEventRowData, PageSize } from "../../schedule.types";
+import { formatEventDate } from "../../utils/dateTime.utils";
+import { formatDayKey, getCompactEventRows } from "../../utils/scheduleEvents.utils";
+import { getEventDayKey, UNSCHEDULED_FILTER } from "../../utils/scheduleFilters.utils";
 import { CompactEventComponent } from "../CompactEvent";
 import { EventCardComponent } from "../EventCard";
 import { PaginationComponent } from "../Pagination";
@@ -37,36 +33,10 @@ interface ListViewProps {
     displayMode: ListDisplayMode;
 }
 
-type CompactEventRow = {
-    dayKey: string;
-    dayLabel: string;
-    timeLabel: string;
-    events: EventSlot[];
-};
+type PaginationItem = EventSlot | CompactEventRowData;
 
-const getEventDayKey = (event: EventSlot): string =>
-    event.start ? getScheduleDayKey(event.start) : UNSCHEDULED_FILTER.value;
-
-const getCompactEventRows = (events: EventSlot[]): CompactEventRow[] => {
-    const rows: CompactEventRow[] = [];
-
-    events.forEach((event) => {
-        const dayKey = getEventDayKey(event);
-        const dayLabel =
-            dayKey === UNSCHEDULED_FILTER.value ? "Unscheduled" : formatScheduleDay(dayKey);
-        const timeLabel = event.start ? formatEventTime(event.start) : "TBD";
-        const previousRow = rows[rows.length - 1];
-
-        if (previousRow && previousRow.dayKey === dayKey && previousRow.timeLabel === timeLabel) {
-            previousRow.events.push(event);
-            return;
-        }
-
-        rows.push({ dayKey, dayLabel, timeLabel, events: [event] });
-    });
-
-    return rows;
-};
+const getPaginationGroupKey = (item: PaginationItem): string =>
+    "id" in item ? getEventDayKey(item) : item.dayKey;
 
 export const ListViewComponent = ({
     events,
@@ -76,15 +46,26 @@ export const ListViewComponent = ({
     displayMode,
 }: ListViewProps) => {
     const [searchParams] = useSearchParams();
+    const fullDayFromDate = searchParams.has("date");
+
     const compactRows = useMemo(() => getCompactEventRows(filteredEvents), [filteredEvents]);
-    const paginationItems = displayMode === ListDisplayMode.Compact ? compactRows : filteredEvents;
-    const getPaginationGroupKey = (item: EventSlot | CompactEventRow): string =>
-        "id" in item ? getEventDayKey(item) : item.dayKey;
+    const eventsPerDay = useMemo(() => {
+        const counts = new Map<string, number>();
+
+        events.forEach((event) => {
+            const dayKey = getEventDayKey(event);
+            counts.set(dayKey, (counts.get(dayKey) ?? 0) + 1);
+        });
+
+        return counts;
+    }, [events]);
+    const paginationItems: PaginationItem[] =
+        displayMode === ListDisplayMode.Compact ? compactRows : filteredEvents;
     const paginationGroupKeys = useMemo(
         () => [...new Set(paginationItems.map(getPaginationGroupKey))],
         [paginationItems]
     );
-    const fullDayFromDate = searchParams.has("date");
+
     const updateFullDayPageParams = (
         params: URLSearchParams,
         page: number,
@@ -112,7 +93,7 @@ export const ListViewComponent = ({
         pageEnd,
         goToPage,
         setSelectedPageSize,
-    } = usePaginatedSchedule<EventSlot | CompactEventRow>({
+    } = usePaginatedSchedule<PaginationItem>({
         items: paginationItems,
         getGroupKey: getPaginationGroupKey,
         updatePageParams: updateFullDayPageParams,
@@ -123,43 +104,35 @@ export const ListViewComponent = ({
         scheduleContentRef,
     });
 
-    const eventsOnPage =
-        displayMode === ListDisplayMode.Full
-            ? itemsOnPage.filter((item): item is EventSlot => "id" in item)
-            : [];
-    const compactRowsOnPage =
-        displayMode === ListDisplayMode.Compact
-            ? itemsOnPage.filter((item): item is CompactEventRow => "timeLabel" in item)
-            : [];
+    const eventsOnPage = useMemo(
+        () =>
+            displayMode === ListDisplayMode.Full
+                ? itemsOnPage.filter((item): item is EventSlot => "id" in item)
+                : [],
+        [displayMode, itemsOnPage]
+    );
+    const compactRowsOnPage = useMemo(
+        () =>
+            displayMode === ListDisplayMode.Compact
+                ? itemsOnPage.filter((item): item is CompactEventRowData => "timeLabel" in item)
+                : [],
+        [displayMode, itemsOnPage]
+    );
     const paginationItemLabel: string | undefined =
         displayMode === ListDisplayMode.Compact && pageSize !== fullDayPageSize
             ? "rows"
             : undefined;
     const fullDayPageKey = pageSize === fullDayPageSize ? paginationGroupKeys[currentPage - 1] : "";
-    const fullDayPageLabel =
-        fullDayPageKey && fullDayPageKey !== UNSCHEDULED_FILTER.value
-            ? formatScheduleDay(fullDayPageKey)
-            : fullDayPageKey === UNSCHEDULED_FILTER.value
-              ? UNSCHEDULED_FILTER.label
-              : "";
+    const fullDayPageLabel = fullDayPageKey ? formatDayKey(fullDayPageKey) : "";
     const fullDayStatusMinWidth =
         pageSize === fullDayPageSize
-            ? Math.max(
-                  ...paginationGroupKeys.map((dayKey) =>
-                      dayKey === UNSCHEDULED_FILTER.value
-                          ? UNSCHEDULED_FILTER.label.length
-                          : formatScheduleDay(dayKey).length
-                  ),
-                  0
-              ) + 2
+            ? Math.max(...paginationGroupKeys.map((dayKey) => formatDayKey(dayKey).length), 0) + 2
             : undefined;
     const filteredEventsOnPage =
         displayMode === ListDisplayMode.Compact
             ? compactRowsOnPage.reduce((count, row) => count + row.events.length, 0)
             : eventsOnPage.length;
-    const totalEventsOnPage = fullDayPageLabel
-        ? events.filter((event) => getEventDayKey(event) === fullDayPageKey).length
-        : 0;
+    const totalEventsOnPage = fullDayPageKey ? (eventsPerDay.get(fullDayPageKey) ?? 0) : 0;
     const paginationRangeText = fullDayPageLabel
         ? `Showing ${filteredEventsOnPage} / ${totalEventsOnPage} items`
         : undefined;

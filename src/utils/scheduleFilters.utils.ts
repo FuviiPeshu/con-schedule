@@ -1,5 +1,6 @@
 import type { EventSlot } from "../api";
 import type { FilterOption, FilterOptions, ScheduleFilters } from "../schedule.types";
+import { getScheduleDayKey } from "./dateTime.utils";
 import { normalizeText } from "./text.utils";
 
 export const emptyFilters: ScheduleFilters = {
@@ -15,11 +16,11 @@ export const UNSCHEDULED_FILTER: FilterOption = {
     value: "Unscheduled",
 } as const;
 
-/** Returns an array of unique, non-empty, sorted string values */
+/** Removes empty values, deduplicates, and sorts locale-aware */
 export const uniqueValues = (values: string[]) =>
     [...new Set(values.filter(Boolean))].sort((first, second) => first.localeCompare(second));
 
-/** Returns an array of unique, non-empty, sorted filter options */
+/** Removes empty values, deduplicates by value, and sorts by label */
 export const uniqueOptions = (options: FilterOption[]) => {
     const optionsByValue = new Map<string, string>();
 
@@ -37,16 +38,10 @@ export const uniqueOptions = (options: FilterOption[]) => {
 const valuesToOptions = (values: string[]): FilterOption[] =>
     uniqueValues(values).map((value) => ({ value, label: value }));
 
-/** Gets the unique filter options from provided events list */
+/** Gets unique filter options from provided events list */
 export const getFilterOptions = (events: EventSlot[]): FilterOptions => ({
     room: valuesToOptions(events.map((event) => event.room.name)),
-    date: uniqueOptions(
-        events.map((event) =>
-            event.start
-                ? { value: getEventDate(event), label: getEventDate(event) }
-                : UNSCHEDULED_FILTER
-        )
-    ),
+    date: valuesToOptions(events.map(getEventDayKey)),
     tag: uniqueOptions(
         events.flatMap((event) => event.tags.map((tag) => ({ value: tag.tag, label: tag.tag })))
     ),
@@ -55,17 +50,28 @@ export const getFilterOptions = (events: EventSlot[]): FilterOptions => ({
             event.speakers.map((speaker) => ({ value: speaker.code, label: speaker.name }))
         )
     ),
-    search: valuesToOptions(events.map((event) => getEventSearchText(event))),
 });
 
-/** Gets the date of the event in YYYY-MM-DD format */
-export const getEventDate = (event: EventSlot) => event.start?.slice(0, 10) ?? "";
+/** Gets schedule day key (yyyy-MM-dd, respecting the day start time) or "" for unscheduled events */
+export const getEventDate = (event: EventSlot) =>
+    event.start ? getScheduleDayKey(event.start) : "";
 
-/** Gets the searchable text of the event (from selected fields) */
-export const getEventSearchText = (event: EventSlot) =>
-    [
-        event.id, // cheap lookup and maybe useful for some users
-        event.code, // cheap lookup and maybe useful for some users
+/** Gets schedule day key of the event, or the unscheduled bucket value when it has no start */
+export const getEventDayKey = (event: EventSlot) => getEventDate(event) || UNSCHEDULED_FILTER.value;
+
+const searchTextCache = new WeakMap<EventSlot, string>();
+
+/** Returns normalized text from the fields supported by schedule search */
+export const getEventSearchText = (event: EventSlot) => {
+    const cached = searchTextCache.get(event);
+
+    if (cached !== undefined) {
+        return cached;
+    }
+
+    const searchText = [
+        event.id,
+        event.code,
         event.title,
         event.raw_abstract,
         event.raw_description,
@@ -77,18 +83,18 @@ export const getEventSearchText = (event: EventSlot) =>
         .join(" ")
         .toLocaleLowerCase();
 
+    searchTextCache.set(event, searchText);
+
+    return searchText;
+};
+
 /** Checks if event matches selected filters */
 export const eventMatchesFilters = (event: EventSlot, filters: ScheduleFilters) => {
     const searchQuery = normalizeText(filters.search);
-    const matchesDate =
-        !filters.date ||
-        (filters.date === UNSCHEDULED_FILTER.value
-            ? !event.start
-            : getEventDate(event) === filters.date);
 
     return (
         (!filters.room || event.room.name === filters.room) &&
-        matchesDate &&
+        (!filters.date || getEventDayKey(event) === filters.date) &&
         (!filters.tag || event.tags.some((tag) => tag.tag === filters.tag)) &&
         (!filters.speaker || event.speakers.some((speaker) => speaker.code === filters.speaker)) &&
         (!searchQuery || getEventSearchText(event).includes(searchQuery))

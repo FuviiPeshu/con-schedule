@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { css, styled } from "styled-components";
 
 import { theme } from "../../styles/theme";
-import { gridHalfCellHeight } from "./CalendarView.component";
+import { gridHalfCellHeight } from "../../utils/calendarLayout.utils";
 
 type ButtonStateProps = { $active: boolean; $disabled: boolean };
 
@@ -208,9 +208,6 @@ export const CalendarGridLane = styled.div<{
 `;
 
 export const CalendarGridRoomLabelColumn = styled.div<{ $height: number }>`
-    position: sticky;
-    left: 0;
-    z-index: 3;
     width: 176px;
     height: ${({ $height }) => `${$height}px`};
     background: ${theme.surfaceDark};

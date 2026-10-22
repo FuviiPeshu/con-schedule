@@ -2,6 +2,7 @@ import { useLocation } from "react-router-dom";
 
 import type { EventSlot } from "../../api";
 import { formatEventDuration } from "../../utils/dateTime.utils";
+import { getEventLinkProps } from "../../utils/navigation.utils";
 import {
     CompactEventLink,
     CompactEventMeta,
@@ -9,17 +10,16 @@ import {
     CompactEventTitle,
 } from "./CompactEvent.styled";
 
-type CompactEventProps = {
+interface CompactEventProps {
     event: EventSlot;
-};
+}
 
 export const CompactEventComponent = ({ event }: CompactEventProps) => {
     const location = useLocation();
 
     return (
         <CompactEventLink
-            to={{ pathname: `/event/${event.id}`, search: location.search }}
-            state={{ fromSchedule: true }}
+            {...getEventLinkProps(event.id, location.search)}
             $trackColor={event.track.color}
         >
             <CompactEventTitle>{event.title}</CompactEventTitle>
