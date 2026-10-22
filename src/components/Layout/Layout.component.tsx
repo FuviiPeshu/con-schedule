@@ -41,7 +41,10 @@ export const LayoutComponent: FC<PropsWithChildren> = ({ children }) => {
                 <HeaderInner>
                     <Brand>
                         <BrandMark>
-                            <BrandLogo src="/assets/header-logo.webp" alt="Logo" />
+                            <BrandLogo
+                                src={`${import.meta.env.BASE_URL}assets/header-logo.webp`}
+                                alt="Logo"
+                            />
                         </BrandMark>
                         <BrandText>
                             <BrandTitle>

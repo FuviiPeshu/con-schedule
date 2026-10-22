@@ -11,7 +11,7 @@ const conventionConfig = JSON.parse(
 
 export default defineConfig(({ mode }) => {
     return {
-        base: "/",
+        base: process.env.GITHUB_ACTIONS === "true" ? "/con-schedule/" : "/",
         plugins: [
             react({
                 babel: {

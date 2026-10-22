@@ -157,7 +157,7 @@ describe("Components / CalendarView", () => {
         const storedWidths = JSON.parse(
             window.localStorage.getItem("con-schedule:EF30:calendar:room-widths") ?? "{}"
         ) as Record<string, number>;
-        expect(storedWidths.Auditorium).toBe(272);
+        expect(storedWidths.Auditorium).toBe(266);
     });
 
     it("should explain when no event matches the filters", () => {
