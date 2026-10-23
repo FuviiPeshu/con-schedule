@@ -32,7 +32,7 @@ export const Shell = styled.div`
 export const Header = styled.header`
     position: relative;
     padding: 4px 32px 8px;
-    background: ${theme.surfaceDark};
+    background: ${theme.primary};
 
     &::after {
         position: absolute;
@@ -79,15 +79,13 @@ export const BrandLogo = styled.img`
 
 export const BrandText = styled.div`
     display: grid;
-    gap: 8px;
+    gap: 2px;
 `;
 
 export const BrandTitle = styled.span`
-    color: ${theme.primaryAccent};
-    font-size: 1rem;
+    color: ${theme.text};
+    font-size: 2rem;
     font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
 
     span {
         color: ${theme.primaryAction};
@@ -148,16 +146,14 @@ export const StatusDot = styled.span<{
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: ${({ $state }) =>
-        $state === FeedState.Archive ? theme.statusError : theme.statusGood};
+    background: ${theme.statusGood};
 
     ${({ $state }) =>
         $state === FeedState.Live
             ? css`
                   animation: ${feedPulse} 2s ease-in-out infinite;
               `
-            : $state !== FeedState.Archive &&
-              css`
+            : css`
                   display: none;
               `}
 `;

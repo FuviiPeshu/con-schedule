@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import type { FilterOptions } from "../../schedule.types";
+import { ListDisplayMode, ScheduleView, type FilterOptions } from "../../schedule.types";
 import { emptyFilters } from "../../utils/scheduleFilters.utils";
 import { ScheduleFiltersPanel } from "./ScheduleFiltersPanel.component";
 
@@ -37,7 +37,13 @@ const pageElements = {
 };
 
 const setup = (props: Partial<Parameters<typeof ScheduleFiltersPanel>[0]> = {}) => {
-    const handlers = { onToggle: vi.fn(), onFilterChange: vi.fn(), onClear: vi.fn() };
+    const handlers = {
+        onToggle: vi.fn(),
+        onFilterChange: vi.fn(),
+        onClear: vi.fn(),
+        onViewChange: vi.fn(),
+        onListDisplayModeChange: vi.fn(),
+    };
 
     render(
         <ScheduleFiltersPanel
@@ -45,6 +51,8 @@ const setup = (props: Partial<Parameters<typeof ScheduleFiltersPanel>[0]> = {}) 
             filterOptions={filterOptions}
             filtersOpen
             hasActiveFilters={false}
+            view={ScheduleView.List}
+            listDisplayMode={ListDisplayMode.Full}
             {...handlers}
             {...props}
         />
@@ -54,6 +62,19 @@ const setup = (props: Partial<Parameters<typeof ScheduleFiltersPanel>[0]> = {}) 
 };
 
 describe("Components / ScheduleFiltersPanel", () => {
+    it("should place view controls between the panel title and search", () => {
+        setup();
+
+        const title = screen.getByRole("heading", { name: "Control panel" });
+        const listViewButton = screen.getByRole("button", { name: "List" });
+        const searchInput = pageElements.searchInput;
+
+        expect(title.compareDocumentPosition(listViewButton)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        expect(listViewButton.compareDocumentPosition(searchInput)).toBe(
+            Node.DOCUMENT_POSITION_FOLLOWING
+        );
+    });
+
     it("should report picked value for each select filter", () => {
         const { onFilterChange } = setup();
 

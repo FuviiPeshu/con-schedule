@@ -48,7 +48,7 @@ export const LayoutComponent: FC<PropsWithChildren> = ({ children }) => {
                         </BrandMark>
                         <BrandText>
                             <BrandTitle>
-                                {conName} <span>schedule</span>
+                                {conName} <span>Schedule</span>
                             </BrandTitle>
                             <BrandName>
                                 <span>{conId}:</span> {conTheme}

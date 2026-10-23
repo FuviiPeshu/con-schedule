@@ -15,7 +15,6 @@ interface CalendarEventLayoutProps {
 }
 
 export const CalendarViewWrapper = styled.section`
-    margin-top: 16px;
     display: flex;
     flex: 1 0 auto;
     flex-direction: column;
@@ -29,6 +28,7 @@ export const CalendarDaySelector = styled.div`
     flex-wrap: wrap;
     overflow: visible;
     border: 2px solid ${theme.primaryAction};
+    border-top: none;
 `;
 
 export const CalendarDayButton = styled.button<ButtonStateProps>`

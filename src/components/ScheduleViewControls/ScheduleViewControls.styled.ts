@@ -2,18 +2,20 @@ import { styled } from "styled-components";
 
 import { theme } from "../../styles/theme";
 
-export const ViewToggleContainer = styled.div`
-    display: inline-flex;
-    flex: 0 0 auto;
-    border: 2px solid ${theme.primaryAction};
-`;
-
 export const ViewControls = styled.div`
     display: flex;
     flex: 0 0 auto;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: center;
     gap: 8px;
+    min-height: 64px;
+    margin-bottom: 16px;
+`;
+
+export const ViewToggleContainer = styled.div`
+    display: inline-flex;
+    flex: 0 0 auto;
+    border: 2px solid ${theme.primaryAction};
 `;
 
 export const ViewOptionCheckbox = styled.label`
@@ -34,8 +36,8 @@ export const ViewOptionCheckbox = styled.label`
 
 export const ViewOptionCheckboxInput = styled.input`
     appearance: none;
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     margin: 0;
     border: 2px solid ${theme.primaryDeep};
     background: transparent;

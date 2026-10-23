@@ -5,7 +5,6 @@ import type { EventSlot } from "../../api";
 import { CalendarViewComponent } from "../../components/CalendarView";
 import { ListViewComponent } from "../../components/ListView";
 import { ScheduleFiltersPanel } from "../../components/ScheduleFiltersPanel";
-import { ScheduleViewControlsComponent } from "../../components/ScheduleViewControls";
 import { inputDebounceMs, storagePrefix } from "../../configuration";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { usePersistedState } from "../../hooks/usePersistedState";
@@ -28,10 +27,6 @@ import { resolveScheduleView } from "../../utils/scheduleView.utils";
 import { booleanOr, oneOf, readStoredValue, writeStoredValue } from "../../utils/storage.utils";
 import {
     ErrorBanner,
-    PageHeader,
-    PageSummary,
-    PageTitle,
-    PageTitleAccent,
     ScheduleBody,
     ScheduleContent,
     SchedulePageShell,
@@ -254,6 +249,10 @@ export const SchedulePage = () => {
                 filterOptions={filterOptions}
                 filtersOpen={filtersOpen}
                 hasActiveFilters={hasActiveFilters}
+                view={activeScheduleView}
+                onViewChange={changeScheduleView}
+                listDisplayMode={listDisplayMode}
+                onListDisplayModeChange={setListDisplayMode}
                 onToggle={() => setFiltersOpen((isOpen) => !isOpen)}
                 onFilterChange={setFilterValue}
                 onClear={clearFilters}
@@ -267,20 +266,6 @@ export const SchedulePage = () => {
             >
                 <ScheduleBody $calendarMode={activeScheduleView === ScheduleView.Calendar}>
                     {isError && <ErrorBanner>Error occured, showing mock data.</ErrorBanner>}
-                    <PageHeader $calendarMode={activeScheduleView === ScheduleView.Calendar}>
-                        <div>
-                            <PageTitle>
-                                Event <PageTitleAccent>schedule</PageTitleAccent>
-                            </PageTitle>
-                            <PageSummary>All times shown in convention local time.</PageSummary>
-                        </div>
-                        <ScheduleViewControlsComponent
-                            view={activeScheduleView}
-                            onViewChange={changeScheduleView}
-                            listDisplayMode={listDisplayMode}
-                            onListDisplayModeChange={setListDisplayMode}
-                        />
-                    </PageHeader>
                     {activeScheduleView === ScheduleView.Calendar ? (
                         <CalendarViewComponent
                             events={events}

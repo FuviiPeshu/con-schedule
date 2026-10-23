@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import babel from "@rolldown/plugin-babel";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
@@ -13,20 +14,19 @@ export default defineConfig(({ mode }) => {
     return {
         base: process.env.GITHUB_ACTIONS === "true" ? "/con-schedule/" : "/",
         plugins: [
-            react({
-                babel: {
-                    plugins: [
-                        [
-                            "babel-plugin-styled-components",
-                            {
-                                displayName: mode === "development",
-                                fileName: mode === "development",
-                                meaninglessFileNames: ["index", "styles"],
-                                pure: true,
-                            },
-                        ],
+            react(),
+            babel({
+                plugins: [
+                    [
+                        "babel-plugin-styled-components",
+                        {
+                            displayName: mode === "development",
+                            fileName: mode === "development",
+                            meaninglessFileNames: ["index", "styles"],
+                            pure: true,
+                        },
                     ],
-                },
+                ],
             }),
         ],
         server: {

@@ -8,6 +8,10 @@ import { buildScheduleData } from "../../api";
 import { useSchedule } from "../../hooks/useSchedule";
 import { SchedulePage } from "./SchedulePage.component";
 
+vi.mock("../../hooks/useSchedule", () => ({
+    useSchedule: vi.fn(),
+}));
+
 const pageElements = {
     get roomFilter() {
         return screen.getByRole("combobox", { name: "Filter by room" });
@@ -24,10 +28,6 @@ const pageElements = {
 };
 
 describe("Pages / SchedulePage", () => {
-    vi.mock("../../hooks/useSchedule", () => ({
-        useSchedule: vi.fn(),
-    }));
-
     const mockedUseSchedule = vi.mocked(useSchedule);
     const scheduleData = buildScheduleData(SCHEDULE_MOCK_DATA);
 

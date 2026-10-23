@@ -1,7 +1,13 @@
 import { filterInputConfig, filterSelectConfigs } from "../../configuration";
-import type { FilterOptions, ScheduleFilters } from "../../schedule.types";
+import type {
+    FilterOptions,
+    ListDisplayMode,
+    ScheduleFilters,
+    ScheduleView,
+} from "../../schedule.types";
 import { AppliedFiltersComponent } from "../AppliedFilters";
 import { FilterInputComponent, FilterSelectComponent } from "../Filters";
+import { ScheduleViewControlsComponent } from "../ScheduleViewControls";
 import {
     CollapseButton,
     CollapseIcon,
@@ -13,21 +19,29 @@ import {
     ResetButton,
 } from "./ScheduleFiltersPanel.styled";
 
-interface ScheduleFiltersPanelProps {
+type ScheduleFiltersPanelProps = {
     filters: ScheduleFilters;
     filterOptions: FilterOptions;
     filtersOpen: boolean;
     hasActiveFilters: boolean;
+    view: ScheduleView;
+    onViewChange: (view: ScheduleView) => void;
+    listDisplayMode: ListDisplayMode;
+    onListDisplayModeChange: (mode: ListDisplayMode) => void;
     onToggle: () => void;
     onFilterChange: (filter: keyof ScheduleFilters, value: string) => void;
     onClear: () => void;
-}
+};
 
 export const ScheduleFiltersPanel = ({
     filters,
     filterOptions,
     filtersOpen,
     hasActiveFilters,
+    view,
+    onViewChange,
+    listDisplayMode,
+    onListDisplayModeChange,
     onToggle,
     onFilterChange,
     onClear,
@@ -48,6 +62,12 @@ export const ScheduleFiltersPanel = ({
         </FilterHeader>
         {filtersOpen ? (
             <FilterBody id="schedule-filters">
+                <ScheduleViewControlsComponent
+                    view={view}
+                    onViewChange={onViewChange}
+                    listDisplayMode={listDisplayMode}
+                    onListDisplayModeChange={onListDisplayModeChange}
+                />
                 <FilterControls role="group" aria-label="Schedule filters">
                     <FilterInputComponent
                         inputType="search"

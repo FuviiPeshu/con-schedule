@@ -25,6 +25,7 @@ export const CalendarDayTabsComponent = ({
                     key={day.value}
                     type="button"
                     role="tab"
+                    aria-label={`${day.label} ${day.eventsCount} events`}
                     aria-selected={day.value === activeDay}
                     aria-disabled={isDisabled}
                     disabled={isDisabled}

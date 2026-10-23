@@ -27,7 +27,7 @@ export const themeBase = {
 
     statusWarning: "#ee5e22",
     statusError: "#b21542",
-    statusGood: "#00504a",
+    statusGood: "#33CC14",
 } as const;
 export type Theme = Record<keyof typeof themeBase, string>;
 

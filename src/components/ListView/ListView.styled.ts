@@ -2,7 +2,9 @@ import { styled } from "styled-components";
 
 import { theme } from "../../styles/theme";
 
-export const ListViewPanel = styled.section``;
+export const ListViewPanel = styled.section`
+    flex: 1 0 auto;
+`;
 
 export const EventList = styled.div``;
 

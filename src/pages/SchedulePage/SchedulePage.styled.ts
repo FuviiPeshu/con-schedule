@@ -2,52 +2,6 @@ import { css, styled } from "styled-components";
 
 import { theme } from "../../styles/theme";
 
-export const PageHeader = styled.header<{ $calendarMode?: boolean }>`
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 8px;
-    margin: 0;
-    padding-bottom: 16px;
-
-    ${({ $calendarMode }) =>
-        $calendarMode &&
-        css`
-            padding: 16px;
-        `}
-
-    @media (max-width: 680px) {
-        ${({ $calendarMode }) =>
-            $calendarMode &&
-            css`
-                padding: 20px;
-            `}
-    }
-`;
-
-export const PageTitle = styled.h1`
-    margin: 0;
-    color: ${theme.text};
-    font-size: 4.8rem;
-    font-weight: 800;
-    letter-spacing: 0;
-    line-height: 1;
-
-    @media (max-width: 680px) {
-        font-size: 3rem;
-    }
-`;
-
-export const PageTitleAccent = styled.span`
-    color: ${theme.primaryAction};
-`;
-
-export const PageSummary = styled.p`
-    margin: 8px 0 0;
-    color: ${theme.textMuted};
-    font-size: 1rem;
-`;
-
 export const SchedulePageShell = styled.div<{ $filtersOpen: boolean }>`
     --schedule-sidebar-width: ${({ $filtersOpen }) => ($filtersOpen ? "320px" : "64px")};
     --schedule-scrollbar-width: 0px;
@@ -88,7 +42,7 @@ export const ScheduleContent = styled.div<{
     grid-area: content;
     overflow-x: hidden;
     overflow-y: auto;
-    padding: ${({ $calendarMode }) => ($calendarMode ? "0" : "16px")};
+    padding: ${({ $calendarMode }) => ($calendarMode ? "0" : "0 16px")};
     scrollbar-gutter: ${({ $verticalScrollbarWidth }) =>
         $verticalScrollbarWidth > 0 ? "stable" : "auto"};
     scrollbar-color: ${theme.primary} ${theme.surfaceBase};
@@ -124,15 +78,10 @@ export const ScheduleContent = styled.div<{
 `;
 
 export const ScheduleBody = styled.div<{ $calendarMode: boolean }>`
+    display: flex;
+    flex-direction: column;
     min-width: 0;
-
-    ${({ $calendarMode }) =>
-        $calendarMode &&
-        css`
-            display: flex;
-            flex-direction: column;
-            min-height: 100%;
-        `}
+    min-height: 100%;
 
     @media (max-width: 680px) {
         padding: ${({ $calendarMode }) => ($calendarMode ? "0" : "16px 20px")};

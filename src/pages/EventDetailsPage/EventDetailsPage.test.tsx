@@ -7,11 +7,11 @@ import { buildScheduleData } from "../../api";
 import { useSchedule } from "../../hooks/useSchedule";
 import { EventDetailsPage } from "./EventDetailsPage.component";
 
-describe("Pages / EventDetailPage", () => {
-    vi.mock("../../hooks/useSchedule", () => ({
-        useSchedule: vi.fn(),
-    }));
+vi.mock("../../hooks/useSchedule", () => ({
+    useSchedule: vi.fn(),
+}));
 
+describe("Pages / EventDetailsPage", () => {
     it("should render event dossier with schedule metadata", () => {
         vi.mocked(useSchedule).mockReturnValue({
             data: buildScheduleData({

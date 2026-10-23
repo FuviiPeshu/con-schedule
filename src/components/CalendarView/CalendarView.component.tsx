@@ -68,6 +68,7 @@ interface CalendarEventLinkProps {
 const CalendarEventLink = ({ event, layout, search }: CalendarEventLinkProps) => (
     <CalendarEvent
         {...getEventLinkProps(event.id, search)}
+        aria-label={`${event.start ? formatEventTime(event.start) : "TBD"} ${event.title} ${event.room.name} / ${formatEventDuration(event.duration)}`}
         $trackColor={event.track.color}
         $top={layout.top}
         $height={layout.height}

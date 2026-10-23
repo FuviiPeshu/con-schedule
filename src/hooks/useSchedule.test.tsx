@@ -8,19 +8,19 @@ import { SCHEDULE_MOCK_DATA } from "../__mocks__/schedule.mocks";
 import { buildScheduleData } from "../api";
 import { useSchedule } from "./useSchedule";
 
+const mockedConfiguration = vi.hoisted(() => ({
+    syncIntervalMs: 5 * 60 * 1000,
+    useMocks: false,
+}));
+const mockedFetchSchedule = vi.hoisted(() => vi.fn());
+
+vi.mock("../configuration", () => mockedConfiguration);
+vi.mock("../api", async () => {
+    const actual = await vi.importActual<typeof import("../api")>("../api");
+    return { ...actual, fetchSchedule: mockedFetchSchedule };
+});
+
 describe("Hooks / useSchedule", () => {
-    const mockedConfiguration = vi.hoisted(() => ({
-        syncIntervalMs: 5 * 60 * 1000,
-        useMocks: false,
-    }));
-    const mockedFetchSchedule = vi.hoisted(() => vi.fn());
-
-    vi.mock("../configuration", () => mockedConfiguration);
-    vi.mock("../api", async () => {
-        const actual = await vi.importActual<typeof import("../api")>("../api");
-        return { ...actual, fetchSchedule: mockedFetchSchedule };
-    });
-
     const createWrapper = () => {
         const queryClient = new QueryClient({
             defaultOptions: {
