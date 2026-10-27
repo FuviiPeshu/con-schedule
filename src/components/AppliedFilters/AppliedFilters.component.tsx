@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import { appliedFilterConfigs } from "../../configuration";
 import { useExpandedFilter } from "../../hooks/useExpandedFilter";
-import type { ScheduleFilters } from "../../schedule.types";
+import type { FilterOptions, ScheduleFilters } from "../../schedule.types";
 import {
     AppliedFilterCompact,
     AppliedFiltersClear,
@@ -24,6 +24,7 @@ import {
 
 interface AppliedFiltersProps {
     filters: ScheduleFilters;
+    filterOptions: FilterOptions;
     onRemove: (filter: keyof ScheduleFilters) => void;
     onClear?: () => void;
     compact?: boolean;
@@ -31,6 +32,7 @@ interface AppliedFiltersProps {
 
 export const AppliedFiltersComponent = ({
     filters,
+    filterOptions,
     onRemove,
     onClear,
     compact = false,
@@ -39,9 +41,19 @@ export const AppliedFiltersComponent = ({
         () =>
             appliedFilterConfigs.flatMap(({ filterKey, label }) => {
                 const value = filters[filterKey];
-                return value ? [{ filterKey, label, value }] : [];
+                if (!value) {
+                    return [];
+                }
+
+                const displayValue =
+                    filterKey === "search"
+                        ? value
+                        : (filterOptions[filterKey].find((option) => option.value === value)
+                              ?.label ?? value);
+
+                return [{ filterKey, label, value, displayValue }];
             }),
-        [filters]
+        [filterOptions, filters]
     );
 
     const {
@@ -76,7 +88,7 @@ export const AppliedFiltersComponent = ({
             </AppliedFiltersLabel>
             {appliedFilters.length > 0 ? (
                 <AppliedFiltersList $compact={compact}>
-                    {appliedFilters.map(({ filterKey, label, value }) => (
+                    {appliedFilters.map(({ filterKey, label, displayValue }) => (
                         <AppliedFilterWrapper
                             key={filterKey}
                             $compact={compact}
@@ -84,7 +96,7 @@ export const AppliedFiltersComponent = ({
                             onMouseLeave={
                                 compact ? (event) => handleMouseLeave(filterKey, event) : undefined
                             }
-                            title={!compact ? `${label}: ${value}` : undefined}
+                            title={!compact ? `${label}: ${displayValue}` : undefined}
                         >
                             {compact ? (
                                 <>
@@ -92,7 +104,7 @@ export const AppliedFiltersComponent = ({
                                         type="button"
                                         aria-label={`Expand ${label.toLowerCase()} filter`}
                                         aria-expanded={expandedFilter === filterKey}
-                                        title={`${label}: ${value}`}
+                                        title={`${label}: ${displayValue}`}
                                         onMouseEnter={() => {
                                             if (expandedFilter === filterKey) {
                                                 keepExpanded(filterKey);
@@ -123,8 +135,8 @@ export const AppliedFiltersComponent = ({
                                                 <ExpandedAppliedFilterLabel>
                                                     {label}
                                                 </ExpandedAppliedFilterLabel>
-                                                <ExpandedAppliedFilterValue title={value}>
-                                                    {value}
+                                                <ExpandedAppliedFilterValue title={displayValue}>
+                                                    {displayValue}
                                                 </ExpandedAppliedFilterValue>
                                             </ExpandedAppliedFilter>
                                             <ExpandedAppliedFilterActions>
@@ -153,7 +165,9 @@ export const AppliedFiltersComponent = ({
                                             x
                                         </AppliedFiltersRemove>
                                     </AppliedFilterWrapperHeader>
-                                    <AppliedFiltersValue title={value}>{value}</AppliedFiltersValue>
+                                    <AppliedFiltersValue title={displayValue}>
+                                        {displayValue}
+                                    </AppliedFiltersValue>
                                 </>
                             )}
                         </AppliedFilterWrapper>

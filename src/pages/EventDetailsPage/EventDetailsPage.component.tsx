@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { BackToScheduleLinkComponent } from "../../components/BackToScheduleLink";
@@ -19,6 +20,11 @@ import {
     DetailsTitle,
     DetailsWrapper,
     EventAbstract,
+    EventFullscreenImage,
+    EventImage,
+    EventImageCloseButton,
+    EventImageDialog,
+    EventImageFrame,
     InfoBlock,
     InfoBlockGrid,
     InfoLabel,
@@ -32,12 +38,72 @@ import {
     TrackMark,
 } from "./EventDetailsPage.styled";
 
+interface ImageOrientationState {
+    image: string;
+    portrait: boolean;
+}
+
 export const EventDetailsPage = () => {
     const { eventId } = useParams<{ eventId: string }>();
     const { data, isLoading } = useSchedule();
+    const [imageOpen, setImageOpen] = useState(false);
+    const [imageOrientation, setImageOrientation] = useState<ImageOrientationState | null>(null);
+
+    const imageDialogRef = useRef<HTMLDialogElement>(null);
 
     const event = data?.events.find((candidate) => String(candidate.id) === eventId);
+    const imageUrl = event?.image ?? "";
+    const portraitImage =
+        imageUrl !== "" && imageOrientation?.image === imageUrl && imageOrientation.portrait;
     const eventState = event ? getEventState(event.start, event.end) : EventState.Unknown;
+
+    useEffect(() => {
+        const dialog = imageDialogRef.current;
+
+        if (!dialog) {
+            return;
+        }
+
+        if (imageOpen) {
+            if (!dialog.open) {
+                if (typeof dialog.showModal === "function") {
+                    dialog.showModal();
+                } else {
+                    dialog.setAttribute("open", "");
+                }
+            }
+            return;
+        }
+
+        if (dialog.open) {
+            if (typeof dialog.close === "function") {
+                dialog.close();
+            } else {
+                dialog.removeAttribute("open");
+            }
+        }
+    }, [imageOpen]);
+
+    const handleImageLoad = (loadEvent: React.SyntheticEvent<HTMLImageElement, Event>) => {
+        const { naturalWidth, naturalHeight } = loadEvent.currentTarget;
+
+        if (naturalWidth > 0 && naturalHeight > 0) {
+            setImageOrientation({
+                image: imageUrl,
+                portrait: naturalWidth <= naturalHeight,
+            });
+        }
+    };
+
+    const closeImage = () => {
+        const dialog = imageDialogRef.current;
+
+        if (dialog?.open && typeof dialog.close === "function") {
+            dialog.close();
+        } else {
+            setImageOpen(false);
+        }
+    };
 
     return isLoading ? (
         <Panel>Loading event data...</Panel>
@@ -46,7 +112,24 @@ export const EventDetailsPage = () => {
             <BackToScheduleLinkComponent fallbackSearch="?page=1" />
             {event ? (
                 <DetailsWrapper>
-                    <DetailsHeader $trackColor={event.track.color}>
+                    <DetailsHeader $trackColor={event.track.color} $hasImage={Boolean(imageUrl)}>
+                        {imageUrl && (
+                            <EventImageFrame
+                                type="button"
+                                aria-label={`Open full-screen image for ${event.title}`}
+                                aria-haspopup="dialog"
+                                aria-controls="event-image-dialog"
+                                $portrait={portraitImage}
+                                onClick={() => setImageOpen(true)}
+                            >
+                                <EventImage
+                                    src={imageUrl}
+                                    alt=""
+                                    $portrait={portraitImage}
+                                    onLoad={handleImageLoad}
+                                />
+                            </EventImageFrame>
+                        )}
                         <DetailsHeaderDetails>
                             <span>Event record / {event.code}</span>
                             <StatusPill $state={eventState}>
@@ -58,6 +141,39 @@ export const EventDetailsPage = () => {
                             {renderEventHtml(event.abstract || "No event abstract available.")}
                         </EventAbstract>
                     </DetailsHeader>
+                    {imageUrl && (
+                        <EventImageDialog
+                            ref={imageDialogRef}
+                            id="event-image-dialog"
+                            aria-label={`${event.title} image viewer`}
+                            onClose={() => setImageOpen(false)}
+                            onCancel={() => setImageOpen(false)}
+                            onKeyDown={(keyEvent) => {
+                                if (keyEvent.key === "Escape") {
+                                    keyEvent.preventDefault();
+                                    closeImage();
+                                }
+                            }}
+                            onClick={(clickEvent) => {
+                                if (clickEvent.target === clickEvent.currentTarget) {
+                                    closeImage();
+                                }
+                            }}
+                        >
+                            <EventImageCloseButton
+                                type="button"
+                                aria-label="Close image"
+                                title="Close image"
+                                onClick={closeImage}
+                            >
+                                x
+                            </EventImageCloseButton>
+                            <EventFullscreenImage
+                                src={imageUrl}
+                                alt={`${event.title} event image`}
+                            />
+                        </EventImageDialog>
+                    )}
 
                     <InfoBlockGrid>
                         <InfoBlock>

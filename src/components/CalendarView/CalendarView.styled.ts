@@ -4,7 +4,10 @@ import { css, styled } from "styled-components";
 import { theme } from "../../styles/theme";
 import { gridHalfCellHeight } from "../../utils/calendarLayout.utils";
 
-type ButtonStateProps = { $active: boolean; $disabled: boolean };
+interface ButtonStateProps {
+    $active: boolean;
+    $disabled: boolean;
+}
 
 interface CalendarEventLayoutProps {
     $trackColor: string;

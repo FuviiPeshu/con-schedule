@@ -19,7 +19,7 @@ import {
     ResetButton,
 } from "./ScheduleFiltersPanel.styled";
 
-type ScheduleFiltersPanelProps = {
+interface ScheduleFiltersPanelProps {
     filters: ScheduleFilters;
     filterOptions: FilterOptions;
     filtersOpen: boolean;
@@ -31,7 +31,7 @@ type ScheduleFiltersPanelProps = {
     onToggle: () => void;
     onFilterChange: (filter: keyof ScheduleFilters, value: string) => void;
     onClear: () => void;
-};
+}
 
 export const ScheduleFiltersPanel = ({
     filters,
@@ -89,6 +89,7 @@ export const ScheduleFiltersPanel = ({
                 </FilterControls>
                 <AppliedFiltersComponent
                     filters={filters}
+                    filterOptions={filterOptions}
                     onRemove={(filter) => onFilterChange(filter, "")}
                 />
                 <ResetButton type="button" disabled={!hasActiveFilters} onClick={onClear}>
@@ -98,6 +99,7 @@ export const ScheduleFiltersPanel = ({
         ) : (
             <AppliedFiltersComponent
                 filters={filters}
+                filterOptions={filterOptions}
                 compact
                 onRemove={(filter) => onFilterChange(filter, "")}
                 onClear={onClear}
