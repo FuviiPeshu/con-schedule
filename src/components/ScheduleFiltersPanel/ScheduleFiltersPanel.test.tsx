@@ -69,7 +69,9 @@ describe("Components / ScheduleFiltersPanel", () => {
         const listViewButton = screen.getByRole("button", { name: "List" });
         const searchInput = pageElements.searchInput;
 
-        expect(title.compareDocumentPosition(listViewButton)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        expect(title.compareDocumentPosition(listViewButton)).toBe(
+            Node.DOCUMENT_POSITION_FOLLOWING
+        );
         expect(listViewButton.compareDocumentPosition(searchInput)).toBe(
             Node.DOCUMENT_POSITION_FOLLOWING
         );

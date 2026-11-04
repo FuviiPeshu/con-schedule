@@ -16,6 +16,7 @@ import {
     ScheduleFilters,
     ScheduleView,
 } from "../../schedule.types";
+import { mediaQuery } from "../../styles/media";
 import { isScheduleReset } from "../../utils/navigation.utils";
 import { getCalendarDays } from "../../utils/scheduleEvents.utils";
 import {
@@ -149,7 +150,7 @@ export const SchedulePage = () => {
             return;
         }
 
-        const mobileQuery = window.matchMedia("(max-width: 680px)");
+        const mobileQuery = window.matchMedia(mediaQuery.mobile);
         const handleViewportChange = () => {
             if (mobileQuery.matches) {
                 setFiltersOpen(true);

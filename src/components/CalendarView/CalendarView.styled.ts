@@ -1,8 +1,12 @@
 import { Link } from "react-router-dom";
 import { css, styled } from "styled-components";
 
+import { ellipsis } from "../../styles/mixins";
+import { borderWidth, transition } from "../../styles/stylePrimitives";
 import { theme } from "../../styles/theme";
+import { fontSize, textStyle, typography } from "../../styles/typography";
 import { gridHalfCellHeight } from "../../utils/calendarLayout.utils";
+import { ButtonComponent } from "../Button";
 
 interface ButtonStateProps {
     $active: boolean;
@@ -30,7 +34,7 @@ export const CalendarDaySelector = styled.div`
     display: flex;
     flex-wrap: wrap;
     overflow: visible;
-    border: 2px solid ${theme.primaryAction};
+    border: ${borderWidth.base} solid ${theme.primaryAction};
     border-top: none;
 `;
 
@@ -41,7 +45,7 @@ export const CalendarDayButton = styled.button<ButtonStateProps>`
     min-width: 128px;
     padding: 10px 12px;
     border: none;
-    border-right: 1px solid ${theme.primaryDeep};
+    border-right: ${borderWidth.thin} solid ${theme.primaryDeep};
     background: ${({ $active }) => ($active ? theme.primaryDeep : theme.surfaceRaised)};
     color: ${({ $active }) => ($active ? theme.text : theme.textSubtle)};
     cursor: ${({ $disabled }) => ($disabled ? "default" : "pointer")};
@@ -58,9 +62,7 @@ export const CalendarDayButton = styled.button<ButtonStateProps>`
 `;
 
 export const CalendarDayLabel = styled.strong`
-    font-size: 1rem;
-    line-height: 1.2;
-    font-weight: 700;
+    ${textStyle({ size: "base", weight: "bold", lineHeight: "tight" })}
 `;
 
 export const CalendarRoomControls = styled.div`
@@ -77,24 +79,18 @@ export const CalendarRoomControlsLabel = styled.span`
     flex: 0 0 auto;
     margin-right: 4px;
     color: ${theme.primaryAccent};
-    font-size: 0.64rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    ${typography.captionLabel}
 `;
 
 export const CalendarHiddenRoom = styled.div`
     display: flex;
     align-items: center;
     gap: 4px;
-    overflow: hidden;
     padding: 4px 4px 4px 8px;
     background: ${theme.surfaceRaised};
     color: ${theme.textSubtle};
-    font-size: 0.64rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    ${textStyle({ size: "s", weight: "bold", spacing: "s" })}
+    ${ellipsis}
 
     > span {
         overflow: hidden;
@@ -109,7 +105,7 @@ export const CalendarViewport = styled.div`
     min-width: 0;
     min-height: 0;
     position: relative;
-    border-top: 2px solid ${theme.primary};
+    border-top: ${borderWidth.base} solid ${theme.primary};
 `;
 
 export const CalendarRoomHeaderViewport = styled.div`
@@ -118,7 +114,7 @@ export const CalendarRoomHeaderViewport = styled.div`
     z-index: 4;
     width: 100%;
     overflow: hidden;
-    border-bottom: 2px solid ${theme.primary};
+    border-bottom: ${borderWidth.base} solid ${theme.primary};
     background: ${theme.surfaceDark};
 `;
 
@@ -160,7 +156,7 @@ export const CalendarHorizontalScroll = styled.div`
     min-width: 0;
     overflow-x: auto;
     overflow-y: hidden;
-    border-top: 1px solid ${theme.primaryAccent};
+    border-top: ${borderWidth.thin} solid ${theme.primaryAccent};
     background: ${theme.surfaceDark};
     scrollbar-color: ${theme.primaryAccent} ${theme.surfaceBase};
 
@@ -173,7 +169,7 @@ export const CalendarHorizontalScroll = styled.div`
     }
 
     &::-webkit-scrollbar-thumb {
-        border: 3px solid ${theme.surfaceBase};
+        border: ${borderWidth.medium} solid ${theme.surfaceBase};
         background: ${theme.primaryAccent};
     }
 `;
@@ -194,7 +190,7 @@ export const CalendarGridHours = styled.div<{ $width: number; $height: number }>
     left: 0;
     width: ${({ $width }) => `${$width}px`};
     height: ${({ $height }) => `${$height}px`};
-    border-right: 1px solid ${theme.primaryDeep};
+    border-right: ${borderWidth.thin} solid ${theme.primaryDeep};
 `;
 
 export const CalendarGridLane = styled.div<{
@@ -224,13 +220,11 @@ export const CalendarGridRoomLabel = styled.div<{ $height: number }>`
     height: ${({ $height }) => `${$height}px`};
     min-width: 176px;
     padding: 8px 12px;
-    border-right: 1px solid ${theme.primary};
-    border-top: 1px solid ${theme.primaryDeep};
+    border-right: ${borderWidth.thin} solid ${theme.primary};
+    border-top: ${borderWidth.thin} solid ${theme.primaryDeep};
     background: ${theme.surfaceDark};
     color: ${theme.textSubtle};
-    font-size: 0.8rem;
-    font-weight: 700;
-    line-height: 1.2;
+    ${textStyle({ size: "m", weight: "bold", lineHeight: "tight" })}
     word-wrap: break-word;
 `;
 
@@ -244,10 +238,9 @@ export const CalendarRoomCorner = styled.div`
     display: grid;
     place-items: center end;
     padding: 8px 12px;
-    border-right: 1px solid ${theme.primary};
+    border-right: ${borderWidth.thin} solid ${theme.primary};
     color: ${theme.textSubtle};
-    font-size: 0.64rem;
-    letter-spacing: 0.08em;
+    ${textStyle({ size: "s", spacing: "l" })}
     text-align: right;
 `;
 
@@ -258,14 +251,11 @@ export const CalendarOrientationButton = styled.button`
     min-height: 64px;
     padding: 6px;
     border: 0;
-    border-right: 1px solid ${theme.primary};
+    border-right: ${borderWidth.thin} solid ${theme.primary};
     background: ${theme.surfaceDark};
     color: ${theme.textSubtle};
     cursor: pointer;
-    font-size: 0.56rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    ${textStyle({ size: "xs", weight: "bold", spacing: "m", uppercase: true })}
 
     &:hover,
     &:focus-visible {
@@ -277,8 +267,7 @@ export const CalendarOrientationButton = styled.button`
 export const CalendarOrientationArrow = styled.span`
     padding: 0 3px;
     color: ${theme.primaryAction};
-    font-size: 0.7rem;
-    letter-spacing: 0;
+    ${textStyle({ size: "s", spacing: "none" })}
 `;
 
 export const CalendarRoomLabel = styled.div<{ $hidden: boolean; $placeholder: boolean }>`
@@ -288,32 +277,15 @@ export const CalendarRoomLabel = styled.div<{ $hidden: boolean; $placeholder: bo
     justify-content: space-between;
     min-width: 0;
     padding: 8px 16px;
-    border-right: 1px solid ${theme.primary};
+    border-right: ${borderWidth.thin} solid ${theme.primary};
     color: ${({ $hidden }) => ($hidden ? theme.textMuted : theme.textSubtle)};
     opacity: ${({ $hidden, $placeholder }) => ($hidden && !$placeholder ? 0.5 : 1)};
-    font-size: 0.8rem;
-    font-weight: 700;
-    line-height: 1.2;
+    ${textStyle({ size: "m", weight: "bold", lineHeight: "tight" })}
     word-wrap: break-word;
 `;
 
-export const CalendarRoomHide = styled.button<{ $compact?: boolean }>`
-    flex: 0 0 auto;
-    width: ${({ $compact }) => ($compact ? "24px" : "32px")};
-    height: ${({ $compact }) => ($compact ? "24px" : "32px")};
+export const CalendarRoomHide = styled(ButtonComponent)`
     margin-left: 8px;
-    padding: 0;
-    border: 1px solid ${theme.primaryDeep};
-    background: transparent;
-    color: ${theme.textSubtle};
-    cursor: pointer;
-    font-size: ${({ $compact }) => ($compact ? "0.64rem" : "0.8rem")};
-    line-height: 1;
-
-    &:hover {
-        border-color: ${theme.primaryAction};
-        color: ${theme.primaryAction};
-    }
 `;
 
 export const CalendarRoomResizeHandle = styled.button`
@@ -347,7 +319,7 @@ export const CalendarHourLabel = styled.span`
     position: absolute;
     right: 8px;
     color: ${theme.textSubtle};
-    font-size: 0.8rem;
+    font-size: ${fontSize.m};
     transform: translateY(-50%);
 `;
 
@@ -376,9 +348,7 @@ export const CalendarEvent = styled(Link).attrs<CalendarEventLayoutProps>(
     background: ${theme.surfaceBase}EE;
     color: ${theme.text};
     text-decoration: none;
-    transition:
-        background-color 160ms ease,
-        border-color 160ms ease;
+    ${transition({ properties: ["background-color", "border-color"], duration: "fast" })}
 
     &:hover,
     &:focus-visible {
@@ -392,8 +362,8 @@ export const CalendarEvent = styled(Link).attrs<CalendarEventLayoutProps>(
         right: 8px;
         width: 8px;
         height: 8px;
-        border-top: 1px solid ${({ $trackColor }) => $trackColor};
-        border-right: 1px solid ${({ $trackColor }) => $trackColor};
+        border-top: ${borderWidth.thin} solid ${({ $trackColor }) => $trackColor};
+        border-right: ${borderWidth.thin} solid ${({ $trackColor }) => $trackColor};
         content: "";
     }
 
@@ -405,7 +375,7 @@ export const CalendarEvent = styled(Link).attrs<CalendarEventLayoutProps>(
             }
 
             ${CalendarEventTitle} {
-                font-size: 0.8rem;
+                font-size: ${fontSize.m};
             }
 
             ${CalendarEventMeta} {
@@ -418,14 +388,12 @@ export const CalendarEventTime = styled.span`
     display: block;
     margin-bottom: 4px;
     color: ${theme.primaryAction};
-    font-size: 0.64rem;
-    letter-spacing: 0.04em;
+    ${textStyle({ size: "s", spacing: "s" })}
 `;
 
 export const CalendarEventTitle = styled.strong`
     display: block;
-    font-size: 1rem;
-    line-height: 1.2;
+    ${textStyle({ size: "base", lineHeight: "tight" })}
     word-wrap: break-word;
 `;
 
@@ -433,8 +401,7 @@ export const CalendarEventMeta = styled.span`
     display: block;
     margin-top: 8px;
     color: ${theme.textAccent};
-    font-size: 0.64rem;
-    line-height: 1.2;
+    ${textStyle({ size: "s", lineHeight: "tight" })}
     word-wrap: break-word;
 `;
 
@@ -456,7 +423,7 @@ export const CalendarTimeGridHeaderLabel = styled.span<{ $left: number }>`
     top: 50%;
     left: ${({ $left }) => `${$left}px`};
     color: ${theme.textSubtle};
-    font-size: 0.8rem;
+    font-size: ${fontSize.m};
     transform: translate(-50%, -50%);
 `;
 

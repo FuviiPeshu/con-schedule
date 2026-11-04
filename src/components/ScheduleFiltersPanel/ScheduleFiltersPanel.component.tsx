@@ -6,8 +6,9 @@ import type {
     ScheduleView,
 } from "../../schedule.types";
 import { AppliedFiltersComponent } from "../AppliedFilters";
-import { FilterInputComponent, FilterSelectComponent } from "../Filters";
+import { InputComponent } from "../Input";
 import { ScheduleViewControlsComponent } from "../ScheduleViewControls";
+import { SelectComponent } from "../Select";
 import {
     CollapseButton,
     CollapseIcon,
@@ -15,6 +16,7 @@ import {
     FilterBody,
     FilterControls,
     FilterHeader,
+    FilterLabel,
     FilterPanelTitle,
     ResetButton,
 } from "./ScheduleFiltersPanel.styled";
@@ -50,7 +52,7 @@ export const ScheduleFiltersPanel = ({
         <FilterHeader $collapsed={!filtersOpen}>
             {filtersOpen && <FilterPanelTitle>Control panel</FilterPanelTitle>}
             <CollapseButton
-                type="button"
+                variant="secondary"
                 aria-label={filtersOpen ? "Collapse filters" : "Expand filters"}
                 aria-expanded={filtersOpen}
                 aria-controls="schedule-filters"
@@ -69,22 +71,27 @@ export const ScheduleFiltersPanel = ({
                     onListDisplayModeChange={onListDisplayModeChange}
                 />
                 <FilterControls role="group" aria-label="Schedule filters">
-                    <FilterInputComponent
-                        inputType="search"
-                        label={filterInputConfig.label}
-                        placeholder={filterInputConfig.emptyLabel}
-                        value={filters.search}
-                        onChange={(value) => onFilterChange(filterInputConfig.filterKey, value)}
-                    />
-                    {filterSelectConfigs.map(({ label, filterKey, emptyLabel }) => (
-                        <FilterSelectComponent
-                            key={filterKey}
-                            label={label}
-                            value={filters[filterKey]}
-                            options={filterOptions[filterKey]}
-                            emptyLabel={emptyLabel}
-                            onChange={(value) => onFilterChange(filterKey, value)}
+                    <FilterLabel>
+                        {filterInputConfig.label}
+                        <InputComponent
+                            type="search"
+                            aria-label={filterInputConfig.emptyLabel}
+                            placeholder={filterInputConfig.emptyLabel}
+                            value={filters[filterInputConfig.filterKey]}
+                            onChange={(value) => onFilterChange(filterInputConfig.filterKey, value)}
                         />
+                    </FilterLabel>
+                    {filterSelectConfigs.map(({ label, filterKey, emptyLabel }) => (
+                        <FilterLabel key={filterKey}>
+                            {label}
+                            <SelectComponent
+                                aria-label={`Filter by ${label.toLocaleLowerCase()}`}
+                                value={filters[filterKey]}
+                                options={filterOptions[filterKey]}
+                                emptyLabel={emptyLabel}
+                                onChange={(value) => onFilterChange(filterKey, value)}
+                            />
+                        </FilterLabel>
                     ))}
                 </FilterControls>
                 <AppliedFiltersComponent
@@ -92,7 +99,7 @@ export const ScheduleFiltersPanel = ({
                     filterOptions={filterOptions}
                     onRemove={(filter) => onFilterChange(filter, "")}
                 />
-                <ResetButton type="button" disabled={!hasActiveFilters} onClick={onClear}>
+                <ResetButton variant="primary" disabled={!hasActiveFilters} onClick={onClear}>
                     Clear filters
                 </ResetButton>
             </FilterBody>

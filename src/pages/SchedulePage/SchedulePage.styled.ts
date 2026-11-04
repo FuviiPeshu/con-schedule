@@ -1,5 +1,7 @@
 import { css, styled } from "styled-components";
 
+import { media } from "../../styles/media";
+import { borderWidth } from "../../styles/stylePrimitives";
 import { theme } from "../../styles/theme";
 
 export const SchedulePageShell = styled.div<{ $filtersOpen: boolean }>`
@@ -16,13 +18,13 @@ export const SchedulePageShell = styled.div<{ $filtersOpen: boolean }>`
     height: 100%;
     background: ${theme.surfaceBase};
 
-    @media (max-width: 920px) {
+    ${media.tablet} {
         --schedule-sidebar-width: ${({ $filtersOpen }) => ($filtersOpen ? "220px" : "64px")};
         grid-template-columns: ${({ $filtersOpen }) =>
             $filtersOpen ? "220px minmax(0, 1fr)" : "64px minmax(0, 1fr)"};
     }
 
-    @media (max-width: 680px) {
+    ${media.mobile} {
         --schedule-scrollbar-width: 0px;
         --schedule-sidebar-width: 0px;
         grid-template-areas:
@@ -56,7 +58,7 @@ export const ScheduleContent = styled.div<{
     }
 
     &::-webkit-scrollbar-thumb {
-        border: 3px solid ${theme.surfaceBase};
+        border: ${borderWidth.medium} solid ${theme.surfaceBase};
         background: ${theme.primary};
     }
 
@@ -68,7 +70,7 @@ export const ScheduleContent = styled.div<{
             overflow-y: auto;
         `}
 
-    @media (max-width: 680px) {
+    ${media.mobile} {
         display: block;
         flex-direction: initial;
         min-height: auto;
@@ -83,7 +85,7 @@ export const ScheduleBody = styled.div<{ $calendarMode: boolean }>`
     min-width: 0;
     min-height: 100%;
 
-    @media (max-width: 680px) {
+    ${media.mobile} {
         padding: ${({ $calendarMode }) => ($calendarMode ? "0" : "16px 20px")};
     }
 `;

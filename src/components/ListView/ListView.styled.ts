@@ -1,6 +1,7 @@
 import { styled } from "styled-components";
 
 import { theme } from "../../styles/theme";
+import { textStyle, typography } from "../../styles/typography";
 
 export const ListViewPanel = styled.section`
     flex: 1 0 auto;
@@ -24,9 +25,7 @@ export const CompactEventRow = styled.div`
 
 export const CompactEventTime = styled.time`
     color: ${theme.primaryAction};
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    ${textStyle({ size: "base", weight: "bold", spacing: "l" })}
 `;
 
 export const CompactEventItems = styled.div`
@@ -50,10 +49,7 @@ export const DayLabel = styled.h3`
     flex: 0 0 auto;
     margin: 0;
     color: ${theme.textSubtle};
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    ${typography.boldUppercaseHeading}
 
     &::before {
         margin-right: 8px;

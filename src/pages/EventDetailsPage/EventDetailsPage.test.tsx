@@ -109,7 +109,6 @@ describe("Pages / EventDetailsPage", () => {
                 position: "absolute",
                 top: "16px",
                 right: "16px",
-                gridArea: "auto",
             });
             expect(dialog).toHaveStyle({ height: "100dvh", overflow: "hidden" });
 

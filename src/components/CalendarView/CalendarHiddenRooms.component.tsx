@@ -31,8 +31,8 @@ export const CalendarHiddenRoomsComponent = ({
                 <CalendarHiddenRoom key={room.value} title={room.label}>
                     <span>{room.label}</span>
                     <CalendarRoomHide
-                        $compact
-                        type="button"
+                        variant="secondary"
+                        size="s"
                         aria-label={`Show ${room.label}`}
                         title={`Show ${room.label}`}
                         onClick={() => onShowRoom(room.value)}

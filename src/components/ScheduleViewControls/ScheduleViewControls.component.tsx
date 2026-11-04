@@ -1,15 +1,11 @@
 import { ListDisplayMode, ScheduleView } from "../../schedule.types";
-import {
-    ViewControls,
-    ViewOptionCheckbox,
-    ViewOptionCheckboxInput,
-    ViewToggleButton,
-    ViewToggleContainer,
-} from "./ScheduleViewControls.styled";
+import { CheckboxComponent } from "../Checkbox";
+import { SegmentedButtonGroupComponent } from "../SegmentedButtonGroup";
+import { ViewControls } from "./ScheduleViewControls.styled";
 
-export const viewOptions = [
-    { view: ScheduleView.List, label: "List" },
-    { view: ScheduleView.Calendar, label: "Calendar" },
+const viewOptions = [
+    { value: ScheduleView.List, label: "List" },
+    { value: ScheduleView.Calendar, label: "Calendar" },
 ] as const;
 
 interface ScheduleViewControlsProps {
@@ -26,32 +22,22 @@ export const ScheduleViewControlsComponent = ({
     onListDisplayModeChange,
 }: ScheduleViewControlsProps) => (
     <ViewControls>
-        <ViewToggleContainer role="group" aria-label="Schedule view">
-            {viewOptions.map((option) => (
-                <ViewToggleButton
-                    key={option.view}
-                    type="button"
-                    $active={view === option.view}
-                    aria-pressed={view === option.view}
-                    onClick={() => onViewChange(option.view)}
-                >
-                    {option.label}
-                </ViewToggleButton>
-            ))}
-        </ViewToggleContainer>
+        <SegmentedButtonGroupComponent
+            aria-label="Schedule view"
+            options={viewOptions}
+            value={view}
+            onChange={onViewChange}
+        />
         {view === ScheduleView.List && (
-            <ViewOptionCheckbox>
-                <ViewOptionCheckboxInput
-                    type="checkbox"
-                    checked={listDisplayMode === ListDisplayMode.Compact}
-                    onChange={(event) =>
-                        onListDisplayModeChange(
-                            event.target.checked ? ListDisplayMode.Compact : ListDisplayMode.Full
-                        )
-                    }
-                />
-                Compact view
-            </ViewOptionCheckbox>
+            <CheckboxComponent
+                label="Compact view"
+                checked={listDisplayMode === ListDisplayMode.Compact}
+                onChange={(checked) =>
+                    onListDisplayModeChange(
+                        checked ? ListDisplayMode.Compact : ListDisplayMode.Full
+                    )
+                }
+            />
         )}
     </ViewControls>
 );

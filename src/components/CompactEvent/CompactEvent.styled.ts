@@ -1,6 +1,9 @@
 import { styled } from "styled-components";
 
+import { lineClamp } from "../../styles/mixins";
+import { borderWidth } from "../../styles/stylePrimitives";
 import { theme } from "../../styles/theme";
+import { textStyle } from "../../styles/typography";
 import { CardMeta, CardWrapper, Location, Title } from "../EventCard/EventCard.styled";
 
 export const CompactEventLink = styled(CardWrapper)`
@@ -12,11 +15,11 @@ export const CompactEventLink = styled(CardWrapper)`
     max-width: 360px;
     min-height: 80px;
     padding: 8px 10px;
-    border: 2px solid ${theme.primary};
+    border: ${borderWidth.base} solid ${theme.primary};
 
     &:first-child,
     &:last-child {
-        border-width: 2px;
+        border-width: ${borderWidth.base};
     }
 `;
 
@@ -24,15 +27,11 @@ export const CompactEventTitle = styled(Title)`
     flex: 0 1 auto;
     margin: 0;
     padding-right: 8px;
-    overflow: hidden;
-    font-size: 1rem;
-    line-height: 1.2;
+    ${textStyle({ size: "base", lineHeight: "tight" })}
+    ${lineClamp(2)}
     text-overflow: ellipsis;
     white-space: normal;
     word-break: break-word;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
 `;
 
 export const CompactEventRoom = styled(Location)`
@@ -42,7 +41,7 @@ export const CompactEventRoom = styled(Location)`
     margin-top: 0;
     min-width: 0;
     overflow: hidden;
-    font-size: 0.64rem;
+    ${textStyle({ size: "s" })}
     text-overflow: ellipsis;
     white-space: normal;
     word-break: break-word;

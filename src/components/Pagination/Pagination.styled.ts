@@ -1,6 +1,9 @@
 import { styled } from "styled-components";
 
+import { media } from "../../styles/media";
+import { ellipsis } from "../../styles/mixins";
 import { theme } from "../../styles/theme";
+import { textStyle } from "../../styles/typography";
 
 export const PaginationBar = styled.nav`
     display: grid;
@@ -10,7 +13,7 @@ export const PaginationBar = styled.nav`
     margin: 16px 0 8px;
     text-transform: uppercase;
 
-    @media (max-width: 680px) {
+    ${media.mobile} {
         display: flex;
         align-items: flex-start;
         flex-direction: column;
@@ -20,12 +23,9 @@ export const PaginationBar = styled.nav`
 export const PaginationRange = styled.span`
     grid-column: 1;
     min-width: 0;
-    overflow: hidden;
     color: ${theme.primaryAccent};
-    font-size: 0.8rem;
-    letter-spacing: 0.04em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    ${textStyle({ size: "m", spacing: "s" })}
+    ${ellipsis}
 `;
 
 export const PaginationControls = styled.div`
@@ -38,36 +38,11 @@ export const PaginationControls = styled.div`
     min-width: 0;
 `;
 
-export const PaginationButton = styled.button`
-    display: grid;
-    place-items: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border: 2px solid ${theme.primary};
-    background: transparent;
-    color: ${theme.text};
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
-
-    &:not(:disabled):hover {
-        border-color: ${theme.primaryAction};
-        color: ${theme.primaryAction};
-    }
-
-    &:disabled {
-        cursor: default;
-        opacity: 0.32;
-    }
-`;
-
 export const PaginationStatus = styled.span<{ $minWidth?: number }>`
     min-width: ${({ $minWidth }) => ($minWidth ? `${$minWidth}ch` : "auto")};
     padding: 0 4px;
     color: ${theme.textSubtle};
-    font-size: 0.8rem;
-    letter-spacing: 0.04em;
+    ${textStyle({ size: "m", spacing: "s" })}
     text-align: center;
 `;
 
@@ -80,31 +55,9 @@ export const PageSizeControl = styled.label`
     justify-self: end;
     min-width: 0;
     color: ${theme.textSubtle};
-    font-size: 0.8rem;
-    letter-spacing: 0.04em;
+    ${textStyle({ size: "m", spacing: "s" })}
 `;
 
 export const PageSizeLabel = styled.span`
     color: ${theme.primaryAccent};
-`;
-
-export const PageSizeSelect = styled.select`
-    min-height: 32px;
-    padding: 2px 4px;
-    border: 2px solid ${theme.primary};
-    border-radius: 0;
-    outline: 0;
-    background: ${theme.surfaceDark};
-    color: ${theme.text};
-    font-size: 0.8rem;
-
-    &:not(:disabled):hover {
-        border-color: ${theme.primaryAction};
-        color: ${theme.primaryAction};
-    }
-
-    &:disabled {
-        cursor: default;
-        opacity: 0.32;
-    }
 `;

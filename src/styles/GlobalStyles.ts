@@ -1,6 +1,7 @@
 import { createGlobalStyle } from "styled-components";
 
 import { theme } from "./theme";
+import { lineHeight } from "./typography";
 
 export const GlobalStyles = createGlobalStyle`
     *, *::before, *::after {
@@ -20,7 +21,7 @@ export const GlobalStyles = createGlobalStyle`
         background: ${theme.surfaceBase};
         color: ${theme.text};
         font-family: "Verdana", "Trebuchet MS", sans-serif;
-        line-height: 1.2;
+        line-height: ${lineHeight.tight};
     }
 
     button, input, select, textarea {

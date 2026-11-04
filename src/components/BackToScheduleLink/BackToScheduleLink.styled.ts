@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { styled } from "styled-components";
 
 import { theme } from "../../styles/theme";
+import { fontSize, typography } from "../../styles/typography";
 
 export const BackLink = styled(Link)`
     display: inline-flex;
@@ -11,9 +12,7 @@ export const BackLink = styled(Link)`
     padding-bottom: 16px;
     color: ${theme.primaryAccent};
     cursor: pointer;
-    font-size: 0.64rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    ${typography.captionLabel}
     text-decoration: none;
 
     &:hover {
@@ -23,5 +22,5 @@ export const BackLink = styled(Link)`
 
 export const BackArrow = styled.span`
     color: ${theme.primaryAction};
-    font-size: 1rem;
+    font-size: ${fontSize.base};
 `;

@@ -1,11 +1,11 @@
 import { fullDayPageSize } from "../../configuration";
 import type { PageSize } from "../../schedule.types";
+import { ButtonComponent } from "../Button";
+import { SelectComponent } from "../Select";
 import {
     PageSizeControl,
     PageSizeLabel,
-    PageSizeSelect,
     PaginationBar,
-    PaginationButton,
     PaginationControls,
     PaginationRange,
     PaginationStatus,
@@ -60,40 +60,39 @@ export const PaginationComponent = ({
             )}
         </PaginationRange>
         <PaginationControls>
-            <PaginationButton
-                type="button"
+            <ButtonComponent
+                variant="secondary"
                 aria-label={`Previous page (${position})`}
                 disabled={currentPage === 1}
                 onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             >
                 &lt;
-            </PaginationButton>
+            </ButtonComponent>
             <PaginationStatus $minWidth={statusMinWidth}>
                 {statusText ??
                     `Page ${formatPaginationNumber(currentPage, totalPages)} / ${totalPages}`}
             </PaginationStatus>
-            <PaginationButton
-                type="button"
+            <ButtonComponent
+                variant="secondary"
                 aria-label={`Next page (${position})`}
                 disabled={currentPage === totalPages}
                 onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             >
                 &gt;
-            </PaginationButton>
+            </ButtonComponent>
         </PaginationControls>
         <PageSizeControl>
             <PageSizeLabel>Page size:</PageSizeLabel>
-            <PageSizeSelect
+            <SelectComponent
+                size="s"
                 aria-label={`Page size (${position})`}
-                value={pageSize}
-                onChange={(event) => onPageSizeChange(event.target.value)}
-            >
-                {pageSizeOptions.map((option) => (
-                    <option key={option} value={option}>
-                        {option === fullDayPageSize ? "FULL DAY" : option}
-                    </option>
-                ))}
-            </PageSizeSelect>
+                value={String(pageSize)}
+                options={pageSizeOptions.map((option) => ({
+                    value: String(option),
+                    label: option === fullDayPageSize ? "FULL DAY" : String(option),
+                }))}
+                onChange={onPageSizeChange}
+            />
         </PageSizeControl>
     </PaginationBar>
 );

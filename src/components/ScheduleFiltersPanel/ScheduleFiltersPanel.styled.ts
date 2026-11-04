@@ -1,12 +1,16 @@
 import { css, styled } from "styled-components";
 
+import { media } from "../../styles/media";
+import { borderWidth } from "../../styles/stylePrimitives";
 import { theme } from "../../styles/theme";
+import { fontSize, textStyle, typography } from "../../styles/typography";
+import { ButtonComponent } from "../Button";
 
 export const FilterAside = styled.aside<{ $collapsed: boolean }>`
     grid-area: aside;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid ${theme.primaryDeep};
+    border-right: ${borderWidth.thin} solid ${theme.primaryDeep};
     color: ${theme.text};
     background: ${theme.surfaceDark};
     padding: 24px 20px 32px;
@@ -19,12 +23,12 @@ export const FilterAside = styled.aside<{ $collapsed: boolean }>`
             padding-left: 8px;
         `}
 
-    @media (max-width: 680px) {
+    ${media.mobile} {
         display: block;
         width: 100%;
         min-height: auto;
         border-right: 0;
-        border-bottom: 2px solid ${theme.primaryAction};
+        border-bottom: ${borderWidth.base} solid ${theme.primaryAction};
     }
 `;
 
@@ -52,40 +56,20 @@ export const FilterPanelTitle = styled.h2`
     display: block;
     margin: 0;
     color: ${theme.primaryAction};
-    font-size: 1.4rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    ${textStyle({ size: "display", weight: "bold", spacing: "l", uppercase: true })}
 
-    @media (max-width: 920px) {
-        font-size: 1.2rem;
-        letter-spacing: 0.04em;
+    ${media.tablet} {
+        ${textStyle({ size: "xl", spacing: "s" })}
     }
 `;
 
-export const CollapseButton = styled.button`
-    display: inline-grid;
-    place-items: center;
-    flex: 0 0 auto;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border: 2px solid ${theme.primaryDeep};
-    background: transparent;
-    color: ${theme.text};
-    cursor: pointer;
-
-    &:hover {
-        border-color: ${theme.primaryAction};
-        color: ${theme.primaryAction};
-    }
-
-    @media (max-width: 920px) {
+export const CollapseButton = styled(ButtonComponent)`
+    ${media.tablet} {
         width: 42px;
         height: 42px;
     }
 
-    @media (max-width: 680px) {
+    ${media.mobile} {
         display: none;
         user-select: none;
         pointer-events: none;
@@ -93,11 +77,10 @@ export const CollapseButton = styled.button`
 `;
 
 export const CollapseIcon = styled.span`
-    font-size: 1.1rem;
-    line-height: 1;
+    ${textStyle({ size: "l", lineHeight: "none" })}
 
-    @media (max-width: 920px) {
-        font-size: 1.28rem;
+    ${media.tablet} {
+        font-size: ${fontSize.xxl};
     }
 `;
 
@@ -105,7 +88,7 @@ export const FilterControls = styled.div`
     display: grid;
     gap: 16px;
 
-    @media (min-width: 681px) and (max-height: 1000px) {
+    ${media.desktopLowHeight} {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
 
@@ -116,27 +99,18 @@ export const FilterControls = styled.div`
     }
 `;
 
-export const ResetButton = styled.button`
+export const FilterLabel = styled.label`
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: ${theme.primaryAccent};
+    ${typography.boldUppercaseLabel}
+
+    ${media.desktopLowHeight} {
+        gap: 2px;
+    }
+`;
+
+export const ResetButton = styled(ButtonComponent)`
     margin-top: 16px;
-    padding: 8px 10px;
-    border: 2px solid ${theme.primaryAction};
-    background: ${theme.primaryAction};
-    color: ${theme.textAction};
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-align: center;
-    text-transform: uppercase;
-    cursor: pointer;
-
-    &:not(:disabled):hover {
-        border-color: ${theme.primaryAction};
-        background: ${theme.surfaceHover};
-        color: ${theme.primaryAction};
-    }
-
-    &:disabled {
-        cursor: default;
-        opacity: 0.5;
-    }
 `;

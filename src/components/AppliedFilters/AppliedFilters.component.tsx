@@ -141,7 +141,8 @@ export const AppliedFiltersComponent = ({
                                             </ExpandedAppliedFilter>
                                             <ExpandedAppliedFilterActions>
                                                 <ExpandedAppliedFilterAction
-                                                    type="button"
+                                                    variant="secondary"
+                                                    size="s"
                                                     aria-label={`Remove ${label.toLowerCase()} filter`}
                                                     title={`Remove ${label.toLowerCase()} filter`}
                                                     onClick={() => handleRemove(filterKey)}
@@ -157,7 +158,8 @@ export const AppliedFiltersComponent = ({
                                     <AppliedFilterWrapperHeader>
                                         <span>{label}</span>
                                         <AppliedFiltersRemove
-                                            type="button"
+                                            variant="secondary"
+                                            size="s"
                                             aria-label={`Remove ${label.toLowerCase()} filter`}
                                             title={`Remove ${label.toLowerCase()} filter`}
                                             onClick={() => onRemove(filterKey)}
@@ -178,7 +180,8 @@ export const AppliedFiltersComponent = ({
             )}
             {compact && onClear && (
                 <AppliedFiltersClear
-                    type="button"
+                    variant="primary"
+                    size="s"
                     aria-label="Clear all filters"
                     title="Clear all filters"
                     onClick={handleClear}

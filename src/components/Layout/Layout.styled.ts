@@ -1,7 +1,10 @@
 import { css, keyframes, styled } from "styled-components";
 
 import { FeedState } from "../../schedule.types";
+import { media } from "../../styles/media";
+import { duration, easing } from "../../styles/stylePrimitives";
 import { theme } from "../../styles/theme";
+import { textStyle, typography } from "../../styles/typography";
 
 const feedPulse = keyframes`
     0%, 100% {
@@ -23,7 +26,7 @@ export const Shell = styled.div`
     overflow: hidden;
     background: ${theme.surfaceBase};
 
-    @media (max-width: 680px) {
+    ${media.mobile} {
         height: auto;
         overflow: visible;
     }
@@ -52,7 +55,7 @@ export const HeaderInner = styled.div`
     justify-content: space-between;
     gap: 32px;
 
-    @media (max-width: 680px) {
+    ${media.mobile} {
         align-items: flex-start;
         flex-direction: column;
         gap: 16px;
@@ -84,8 +87,7 @@ export const BrandText = styled.div`
 
 export const BrandTitle = styled.span`
     color: ${theme.text};
-    font-size: 2rem;
-    font-weight: 600;
+    ${textStyle({ size: "title", weight: "semibold" })}
 
     span {
         color: ${theme.primaryAction};
@@ -94,8 +96,7 @@ export const BrandTitle = styled.span`
 
 export const BrandName = styled.span`
     color: ${theme.text};
-    font-size: 1.2rem;
-    font-weight: 800;
+    ${textStyle({ size: "xl", weight: "extrabold" })}
 
     span {
         color: ${theme.primaryAction};
@@ -107,11 +108,9 @@ export const HeaderMeta = styled.div`
     align-items: center;
     gap: 16px;
     color: ${theme.textAccent};
-    font-size: 0.8rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    ${typography.uppercaseLabel}
 
-    @media (max-width: 680px) {
+    ${media.mobile} {
         width: 100%;
         flex-wrap: wrap;
         justify-content: space-between;
@@ -134,9 +133,7 @@ export const HeaderColumn = styled.span`
 
 export const HeaderColumnLabel = styled.span`
     color: ${theme.primaryAccent};
-    font-size: 0.8rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    ${typography.uppercaseLabel}
 `;
 
 export const StatusDot = styled.span<{
@@ -151,7 +148,7 @@ export const StatusDot = styled.span<{
     ${({ $state }) =>
         $state === FeedState.Live
             ? css`
-                  animation: ${feedPulse} 2s ease-in-out infinite;
+                  animation: ${feedPulse} ${duration.pulse} ${easing.inOut} infinite;
               `
             : css`
                   display: none;
@@ -169,7 +166,7 @@ export const Main = styled.main`
     padding: 0;
     overflow: hidden;
 
-    @media (max-width: 680px) {
+    ${media.mobile} {
         display: block;
         overflow: visible;
     }

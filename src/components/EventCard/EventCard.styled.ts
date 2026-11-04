@@ -1,7 +1,11 @@
 import { Link } from "react-router-dom";
 import { styled } from "styled-components";
 
+import { media } from "../../styles/media";
+import { ellipsis, lineClamp, slashPrefix } from "../../styles/mixins";
+import { borderWidth, transition } from "../../styles/stylePrimitives";
 import { theme } from "../../styles/theme";
+import { fontSize, textStyle } from "../../styles/typography";
 
 export const CardWrapper = styled(Link)<{ $trackColor: string }>`
     position: relative;
@@ -12,20 +16,20 @@ export const CardWrapper = styled(Link)<{ $trackColor: string }>`
     min-width: 0;
     overflow: hidden;
     padding: 16px 24px 16px 16px;
-    border: 4px solid transparent;
-    border-top-width: 2px;
-    border-bottom-width: 2px;
+    border: ${borderWidth.thick} solid transparent;
+    border-top-width: ${borderWidth.base};
+    border-bottom-width: ${borderWidth.base};
     border-color: ${theme.primaryDeep};
     background: ${theme.surfaceRaised};
     color: ${theme.text};
     text-decoration: none;
-    transition: background-color 256ms ease-out;
+    ${transition({ properties: "background-color", easing: "out" })}
 
     &:first-child {
-        border-top-width: 4px;
+        border-top-width: ${borderWidth.thick};
     }
     &:last-child {
-        border-bottom-width: 4px;
+        border-bottom-width: ${borderWidth.thick};
     }
 
     &:hover {
@@ -41,7 +45,7 @@ export const CardWrapper = styled(Link)<{ $trackColor: string }>`
         pointer-events: none;
         transform: scaleX(0);
         transform-origin: left center;
-        transition: transform 500ms ease;
+        ${transition({ properties: "transform", duration: "slow" })}
     }
 
     &:hover::before,
@@ -61,18 +65,18 @@ export const CardWrapper = styled(Link)<{ $trackColor: string }>`
         right: 8px;
         width: 8px;
         height: 8px;
-        border-top: 1px solid ${({ $trackColor }) => $trackColor};
-        border-right: 1px solid ${({ $trackColor }) => $trackColor};
+        border-top: ${borderWidth.thin} solid ${({ $trackColor }) => $trackColor};
+        border-right: ${borderWidth.thin} solid ${({ $trackColor }) => $trackColor};
         content: "";
     }
 
-    @media (max-width: 680px) {
+    ${media.mobile} {
         grid-template-columns: 72px minmax(0, 1fr) max-content;
         gap: 14px;
         padding: 16px 16px 16px 12px;
     }
 
-    @media (max-width: 420px) {
+    ${media.smallMobile} {
         grid-template-columns: 1fr max-content;
 
         > :first-child {
@@ -86,9 +90,9 @@ export const TimeBlock = styled.div`
     display: flex;
     flex-direction: column;
     padding: 8px 4px 0 0;
-    border-right: 1px solid ${theme.primary};
+    border-right: ${borderWidth.thin} solid ${theme.primary};
 
-    @media (max-width: 420px) {
+    ${media.smallMobile} {
         display: flex;
         align-items: baseline;
         gap: 2px;
@@ -99,27 +103,23 @@ export const TimeBlock = styled.div`
 
 export const TimeStart = styled.time`
     color: ${theme.primaryAction};
-    font-size: 1.28rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
+    ${textStyle({ size: "xxl", weight: "bold", spacing: "xs" })}
 
-    @media (max-width: 680px) {
-        font-size: 1.1rem;
+    ${media.mobile} {
+        font-size: ${fontSize.l};
     }
 `;
 
 export const TimeEnd = styled.span`
     margin-top: 4px;
     color: ${theme.textAccent};
-    font-size: 0.8rem;
+    ${textStyle({ size: "m" })}
 `;
 
 export const Duration = styled.span`
     margin-top: 16px;
     color: ${theme.textMuted};
-    font-size: 0.64rem;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    ${textStyle({ size: "s", spacing: "s", uppercase: true })}
 `;
 
 export const CardContent = styled.div`
@@ -137,51 +137,34 @@ export const TitleRow = styled.div`
 export const Title = styled.h3`
     flex: 0 1 auto;
     margin: 0;
-    overflow: hidden;
     color: ${theme.text};
-    font-size: 1.4rem;
-    font-weight: 800;
-    letter-spacing: 0;
-    line-height: 1.2;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    ${textStyle({ size: "display", weight: "extrabold", spacing: "none", lineHeight: "tight" })}
+    ${ellipsis}
 
-    @media (max-width: 680px) {
-        font-size: 1.1rem;
+    ${media.mobile} {
+        font-size: ${fontSize.l};
     }
 `;
 
 export const Location = styled.span`
     flex: 0 1 auto;
     margin-left: 16px;
-    overflow: hidden;
     color: ${theme.primaryAccent};
-    font-size: 0.8rem;
-    letter-spacing: 0.02em;
+    ${textStyle({ size: "m", spacing: "xs" })}
+    ${ellipsis}
     max-width: 100%;
     text-align: left;
-    text-overflow: ellipsis;
     text-transform: uppercase;
-    white-space: nowrap;
 
-    &::before {
-        font-size: 1rem;
-        margin-right: 8px;
-        color: ${theme.primary};
-        content: "/";
-    }
+    ${slashPrefix({ gap: "8px", size: "base" })}
 `;
 
 export const Description = styled.p`
-    display: -webkit-box;
     width: 100%;
     margin: 4px 0 0;
-    overflow: hidden;
     color: ${theme.textMuted};
-    font-size: 0.8rem;
-    line-height: 1.4;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    ${textStyle({ size: "m", lineHeight: "relaxed" })}
+    ${lineClamp(2)}
 `;
 
 export const CardMeta = styled.div`
@@ -190,21 +173,14 @@ export const CardMeta = styled.div`
     gap: 4px 16px;
     margin-top: 8px;
     color: ${theme.textAccent};
-    font-size: 0.64rem;
-    letter-spacing: 0.02em;
+    ${textStyle({ size: "s", spacing: "xs" })}
 `;
 
 export const MetaItem = styled.span`
-    overflow: hidden;
     max-width: 100%;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    ${ellipsis}
 
-    &::before {
-        margin-right: 4px;
-        color: ${theme.primary};
-        content: "/";
-    }
+    ${slashPrefix({ gap: "4px" })}
 `;
 
 export const CardArrow = styled.span`
@@ -212,10 +188,10 @@ export const CardArrow = styled.span`
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: calc(100% - 0.55rem);
+    height: calc(100% - ${fontSize.xs});
     gap: 4px;
     color: ${theme.primaryAccent};
-    transition: color 256ms ease;
+    ${transition({ properties: "color" })}
 
     ${CardWrapper}:hover & {
         color: ${theme.primaryAction};
@@ -223,13 +199,10 @@ export const CardArrow = styled.span`
 `;
 
 export const CardArrowLabel = styled.span`
-    font-size: 0.55rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    ${textStyle({ size: "xs", spacing: "l", uppercase: true })}
     white-space: nowrap;
 `;
 
 export const CardArrowIcon = styled.span`
-    font-size: 1.28rem;
-    line-height: 1;
+    ${textStyle({ size: "xxl", lineHeight: "none" })}
 `;

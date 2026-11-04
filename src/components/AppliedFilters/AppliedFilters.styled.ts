@@ -1,6 +1,11 @@
 import { css, keyframes, styled } from "styled-components";
 
+import { media } from "../../styles/media";
+import { ellipsis } from "../../styles/mixins";
+import { borderWidth, duration, easing, transition } from "../../styles/stylePrimitives";
 import { theme } from "../../styles/theme";
+import { textStyle, typography } from "../../styles/typography";
+import { ButtonComponent } from "../Button";
 
 const appliedFilterFadeIn = keyframes`
     from {
@@ -18,22 +23,19 @@ export const AppliedFiltersWrapper = styled.div<{ $compact?: boolean }>`
     margin: auto 0 0;
     padding-top: 16px;
 
-    @media (max-width: 680px) {
+    ${media.mobile} {
         display: none;
     }
 `;
 
 export const AppliedFiltersLabel = styled.span<{ $compact?: boolean }>`
     color: ${theme.primaryAction};
-    font-size: 0.8rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    ${typography.uppercaseLabel}
 
     ${({ $compact }) =>
         $compact &&
         css`
-            font-size: 0.5rem;
-            letter-spacing: 0em;
+            ${textStyle({ size: "xxs", spacing: "none" })}
             white-space: nowrap;
         `}
 `;
@@ -53,7 +55,7 @@ export const AppliedFiltersList = styled.ul<{ $compact?: boolean }>`
             overflow: visible;
         `}
 
-    @media (max-height: 680px) {
+    ${media.shortScreen} {
         ${({ $compact }) =>
             $compact
                 ? css`
@@ -72,12 +74,10 @@ export const AppliedFilterWrapper = styled.li<{ $compact?: boolean }>`
     align-items: center;
     gap: 8px;
     padding: 6px 8px;
-    border-left: 2px solid ${theme.primaryAccent};
+    border-left: ${borderWidth.base} solid ${theme.primaryAccent};
     background: ${theme.surfaceRaised};
     color: ${theme.primaryAccent};
-    font-size: 0.64rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    ${textStyle({ size: "s", weight: "bold", spacing: "l" })}
 
     ${({ $compact }) =>
         $compact &&
@@ -86,8 +86,7 @@ export const AppliedFilterWrapper = styled.li<{ $compact?: boolean }>`
             grid-template-areas: "label remove";
             gap: 4px;
             padding: 4px;
-            font-size: 0.55rem;
-            letter-spacing: 0em;
+            ${textStyle({ size: "xs", spacing: "none" })}
             position: relative;
             display: block;
             padding: 0;
@@ -96,7 +95,7 @@ export const AppliedFilterWrapper = styled.li<{ $compact?: boolean }>`
             overflow: visible;
         `}
 
-    @media (max-height: 680px) {
+    ${media.shortScreen} {
         ${({ $compact }) =>
             !$compact &&
             css`
@@ -114,16 +113,14 @@ export const AppliedFilterCompact = styled.button`
     align-items: center;
     width: 100%;
     padding: 4px;
-    overflow: hidden;
-    border: 2px solid ${theme.primaryDeep};
+    border: ${borderWidth.base} solid ${theme.primaryDeep};
     border-left-color: ${theme.primaryAccent};
     background: ${theme.surfaceRaised};
     color: ${theme.primaryAccent};
     text-align: left;
-    text-overflow: ellipsis;
     text-transform: uppercase;
-    white-space: nowrap;
-    transition: opacity 500ms ease;
+    ${ellipsis}
+    ${transition({ properties: "opacity", duration: "slow" })}
 
     span {
         overflow: hidden;
@@ -142,17 +139,17 @@ export const ExpandedAppliedFilterWrapper = styled.div<{ $visible: boolean }>`
     gap: 4px;
     width: 256px;
     padding: 4px;
-    border: 2px solid ${theme.primaryDeep};
+    border: ${borderWidth.base} solid ${theme.primaryDeep};
     border-left-color: ${theme.primaryAccent};
     background: ${theme.surfaceRaised};
     pointer-events: auto;
-    transition: opacity 500ms ease;
+    ${transition({ properties: "opacity", duration: "slow" })}
     opacity: ${({ $visible }) => ($visible ? 1 : 0)};
 
     ${({ $visible }) =>
         $visible
             ? css`
-                  animation: ${appliedFilterFadeIn} 500ms ease both;
+                  animation: ${appliedFilterFadeIn} ${duration.slow} ${easing.standard} both;
               `
             : css`
                   animation: none;
@@ -167,22 +164,8 @@ export const ExpandedAppliedFilterActions = styled.div`
     gap: 4px;
 `;
 
-export const ExpandedAppliedFilterAction = styled.button`
-    height: 100%;
-    padding: 4px 8px;
-    border: 2px solid ${theme.primaryDeep};
-    color: ${theme.primary};
-    background: ${theme.surfaceDark};
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 700;
-    white-space: nowrap;
-
-    &:hover {
-        border-color: ${theme.primaryAction};
-        background: ${theme.primaryAction};
-        color: ${theme.textAction};
-    }
+export const ExpandedAppliedFilterAction = styled(ButtonComponent)`
+    background: ${theme.surfaceRaised};
 `;
 
 export const ExpandedAppliedFilter = styled.div`
@@ -192,21 +175,15 @@ export const ExpandedAppliedFilter = styled.div`
 `;
 
 export const ExpandedAppliedFilterLabel = styled.span`
-    overflow: hidden;
     color: ${theme.primaryAccent};
-    font-size: 0.55rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    text-overflow: ellipsis;
-    text-transform: uppercase;
-    white-space: nowrap;
+    ${textStyle({ size: "xs", weight: "bold", spacing: "xs", uppercase: true })}
+    ${ellipsis}
 `;
 
 export const ExpandedAppliedFilterValue = styled.span`
     overflow: hidden;
     color: ${theme.text};
-    font-size: 0.64rem;
-    letter-spacing: 0.02em;
+    ${textStyle({ size: "s", spacing: "xs" })}
 `;
 
 export const AppliedFilterWrapperHeader = styled.div<{ $compact?: boolean }>`
@@ -226,12 +203,10 @@ export const AppliedFilterWrapperHeader = styled.div<{ $compact?: boolean }>`
 
     > span {
         grid-area: label;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        ${ellipsis}
     }
 
-    @media (max-height: 680px) {
+    ${media.shortScreen} {
         ${({ $compact }) =>
             !$compact &&
             css`
@@ -244,61 +219,20 @@ export const AppliedFilterWrapperHeader = styled.div<{ $compact?: boolean }>`
 export const AppliedFiltersValue = styled.span`
     grid-area: value;
     min-width: 0;
-    overflow: hidden;
     color: ${theme.text};
-    font-size: 0.8rem;
-    font-weight: 400;
-    letter-spacing: 0.02em;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    ${textStyle({ size: "m", weight: "regular", spacing: "xs" })}
+    ${ellipsis}
 `;
 
-export const AppliedFiltersRemove = styled.button`
+export const AppliedFiltersRemove = styled(ButtonComponent)`
     grid-area: remove;
-    display: grid;
-    place-items: center;
-    width: 20px;
-    height: 20px;
-    padding: 0;
-    border: 1px solid ${theme.primary};
-    background: transparent;
-    color: ${theme.textSubtle};
-    cursor: pointer;
-    font-size: 0.75rem;
-    line-height: 1;
-
-    &:hover {
-        border-color: ${theme.primaryAction};
-        color: ${theme.primaryAction};
-    }
 `;
 
-export const AppliedFiltersClear = styled.button`
+export const AppliedFiltersClear = styled(ButtonComponent)`
     width: 100%;
-    padding: 4px 6px;
-    border: 2px solid ${theme.primaryAction};
-    background: ${theme.primaryAction};
-    color: ${theme.textAction};
-    cursor: pointer;
-    font-size: 0.64rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-
-    &:not(:disabled):hover {
-        border-color: ${theme.primaryAction};
-        background: ${theme.surfaceHover};
-        color: ${theme.primaryAction};
-    }
-
-    &:disabled {
-        cursor: default;
-        opacity: 0.5;
-    }
 `;
 
 export const AppliedFiltersEmpty = styled.span`
     color: ${theme.textMuted};
-    font-size: 0.64rem;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
+    ${textStyle({ size: "s", spacing: "xs", uppercase: true })}
 `;

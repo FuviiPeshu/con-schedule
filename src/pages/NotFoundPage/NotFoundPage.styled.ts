@@ -1,6 +1,9 @@
 import { styled } from "styled-components";
 
+import { media } from "../../styles/media";
+import { borderWidth } from "../../styles/stylePrimitives";
 import { theme } from "../../styles/theme";
+import { fontSize, typography } from "../../styles/typography";
 
 export const Page = styled.div`
     display: flex;
@@ -12,7 +15,7 @@ export const Page = styled.div`
     overflow: auto;
     padding: 16px 0 0;
 
-    @media (max-width: 680px) {
+    ${media.mobile} {
         & > a {
             margin-left: 24px;
         }
@@ -20,16 +23,14 @@ export const Page = styled.div`
 `;
 
 export const Heading = styled.h1`
-    border-top: 4px solid ${theme.primaryAction};
+    border-top: ${borderWidth.thick} solid ${theme.primaryAction};
     margin: 0;
     padding: 64px 16px;
     color: ${theme.text};
-    font-size: 4.4rem;
-    font-weight: 800;
-    line-height: 1;
+    ${typography.displayHeading}
     text-align: center;
 
-    @media (max-width: 680px) {
-        font-size: 3rem;
+    ${media.mobile} {
+        font-size: ${fontSize.big};
     }
 `;

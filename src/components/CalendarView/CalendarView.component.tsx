@@ -282,7 +282,7 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
                                         {!room.placeholder && <span>{room.label}</span>}
                                         {!room.placeholder && (
                                             <CalendarRoomHide
-                                                type="button"
+                                                variant="secondary"
                                                 aria-label={`${hiddenRoomSet.has(room.value) ? "Show" : "Hide"} ${room.label}`}
                                                 title={`${hiddenRoomSet.has(room.value) ? "Show" : "Hide"} ${room.label}`}
                                                 onClick={() => toggleRoom(room.value)}
@@ -374,7 +374,7 @@ export const CalendarViewComponent: FC<CalendarViewProps> = ({
                                             <span>{room.label}</span>
                                             {!room.placeholder && (
                                                 <CalendarRoomHide
-                                                    type="button"
+                                                    variant="secondary"
                                                     aria-label={`Hide ${room.label}`}
                                                     title={`Hide ${room.label}`}
                                                     onClick={() => toggleRoom(room.value)}
