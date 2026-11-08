@@ -38,14 +38,6 @@ export const PaginationControls = styled.div`
     min-width: 0;
 `;
 
-export const PaginationStatus = styled.span<{ $minWidth?: number }>`
-    min-width: ${({ $minWidth }) => ($minWidth ? `${$minWidth}ch` : "auto")};
-    padding: 0 4px;
-    color: ${theme.textSubtle};
-    ${textStyle({ size: "m", spacing: "s" })}
-    text-align: center;
-`;
-
 export const PageSizeControl = styled.label`
     display: inline-flex;
     align-items: center;
@@ -56,8 +48,14 @@ export const PageSizeControl = styled.label`
     min-width: 0;
     color: ${theme.textSubtle};
     ${textStyle({ size: "m", spacing: "s" })}
+
+    > select {
+        width: auto;
+        min-width: 80px;
+    }
 `;
 
 export const PageSizeLabel = styled.span`
+    flex: 0 1 auto;
     color: ${theme.primaryAccent};
 `;

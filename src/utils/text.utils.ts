@@ -13,6 +13,10 @@ const normalizeEmbeddedMarkdownLinks = (value: string): string =>
 /** Normalizes string (trims whitespace and converts it to lowercase) */
 export const normalizeText = (value: string): string => value.trim().toLocaleLowerCase();
 
+/** Left-pads number with zeros to the width of the given maximum */
+export const padNumber = (value: number, maximum: number): string =>
+    String(value).padStart(String(maximum).length, "0");
+
 /** Sanitizes HTML before converting it to React elements */
 export const renderEventHtml = (value: string): ReturnType<typeof parse> =>
     parse(DOMPurify.sanitize(normalizeEmbeddedMarkdownLinks(value)));

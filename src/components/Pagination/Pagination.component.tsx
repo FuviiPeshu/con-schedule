@@ -1,6 +1,8 @@
 import { fullDayPageSize } from "../../configuration";
 import type { PageSize } from "../../schedule.types";
+import { padNumber } from "../../utils/text.utils";
 import { ButtonComponent } from "../Button";
+import { PagePickerComponent } from "../PagePicker";
 import { SelectComponent } from "../Select";
 import {
     PageSizeControl,
@@ -8,11 +10,7 @@ import {
     PaginationBar,
     PaginationControls,
     PaginationRange,
-    PaginationStatus,
 } from "./Pagination.styled";
-
-const formatPaginationNumber = (value: number, maximum: number): string =>
-    String(value).padStart(String(maximum).length, "0");
 
 interface PaginationProps {
     currentPage: number;
@@ -27,6 +25,8 @@ interface PaginationProps {
     statusText?: string;
     /** Optional minimum character width for the status to avoid layout shifts */
     statusMinWidth?: number;
+    /** Optional description per page (index 0 = page 1) shown in the page picker */
+    pageLabels?: readonly string[];
     pageSize: PageSize;
     pageSizeOptions: readonly PageSize[];
     position: "top" | "bottom";
@@ -44,6 +44,7 @@ export const PaginationComponent = ({
     rangeText,
     statusText,
     statusMinWidth,
+    pageLabels,
     pageSize,
     pageSizeOptions,
     position,
@@ -54,8 +55,8 @@ export const PaginationComponent = ({
         <PaginationRange>
             {rangeText ?? (
                 <>
-                    Showing {formatPaginationNumber(pageStart, totalItems)}-
-                    {formatPaginationNumber(pageEnd, totalItems)} / {totalItems} {itemLabel}
+                    Showing {padNumber(pageStart, totalItems)}-{padNumber(pageEnd, totalItems)} /{" "}
+                    {totalItems} {itemLabel}
                 </>
             )}
         </PaginationRange>
@@ -68,10 +69,17 @@ export const PaginationComponent = ({
             >
                 &lt;
             </ButtonComponent>
-            <PaginationStatus $minWidth={statusMinWidth}>
-                {statusText ??
-                    `Page ${formatPaginationNumber(currentPage, totalPages)} / ${totalPages}`}
-            </PaginationStatus>
+            <PagePickerComponent
+                currentPage={currentPage}
+                totalPages={totalPages}
+                statusText={
+                    statusText ?? `Page ${padNumber(currentPage, totalPages)} / ${totalPages}`
+                }
+                statusMinWidth={statusMinWidth}
+                pageLabels={pageLabels}
+                position={position}
+                onPageChange={onPageChange}
+            />
             <ButtonComponent
                 variant="secondary"
                 aria-label={`Next page (${position})`}

@@ -137,6 +137,8 @@ export const ListViewComponent = ({
         ? `Showing ${filteredEventsOnPage} / ${totalEventsOnPage} items`
         : undefined;
     const paginationStatusText = fullDayPageLabel || undefined;
+    const paginationPageLabels =
+        pageSize === fullDayPageSize ? paginationGroupKeys.map(formatDayKey) : undefined;
 
     const displayEvents = useMemo(
         () =>
@@ -170,6 +172,7 @@ export const ListViewComponent = ({
                 rangeText={paginationRangeText}
                 statusText={paginationStatusText}
                 statusMinWidth={fullDayStatusMinWidth}
+                pageLabels={paginationPageLabels}
                 pageSize={pageSize}
                 pageSizeOptions={pageSizeOptions}
                 position="top"
@@ -238,6 +241,7 @@ export const ListViewComponent = ({
                     rangeText={paginationRangeText}
                     statusText={paginationStatusText}
                     statusMinWidth={fullDayStatusMinWidth}
+                    pageLabels={paginationPageLabels}
                     pageSize={pageSize}
                     pageSizeOptions={pageSizeOptions}
                     position="bottom"

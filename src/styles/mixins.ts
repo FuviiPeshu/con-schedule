@@ -35,7 +35,6 @@ export const slashPrefix = ({ gap, size }: SlashPrefixParams) => css`
 
 export const field = css`
     width: 100%;
-    height: 42px;
     padding: 8px 10px;
     border: ${borderWidth.base} solid ${theme.primaryDeep};
     border-radius: 0;
@@ -45,6 +44,11 @@ export const field = css`
 
     &:focus {
         border-color: ${theme.primaryAccent};
+    }
+
+    &:disabled {
+        cursor: default;
+        opacity: 0.32;
     }
 
     ${media.desktopLowHeight} {

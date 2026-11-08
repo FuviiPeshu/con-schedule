@@ -1,11 +1,14 @@
 import { Route, Routes } from "react-router-dom";
 
 import { LayoutComponent } from "./components/Layout/";
+import { useTruncationTooltips } from "./hooks/useTruncationTooltips";
 import { EventDetailsPage } from "./pages/EventDetailsPage/EventDetailsPage.component";
 import { NotFoundPage } from "./pages/NotFoundPage/NotFoundPage.component";
 import { SchedulePage } from "./pages/SchedulePage/SchedulePage.component";
 
 export default function App() {
+    useTruncationTooltips();
+
     return (
         <LayoutComponent>
             <Routes>

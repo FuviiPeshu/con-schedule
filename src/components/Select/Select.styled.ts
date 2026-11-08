@@ -3,29 +3,25 @@ import { css, styled } from "styled-components";
 import { field } from "../../styles/mixins";
 import { borderWidth } from "../../styles/stylePrimitives";
 import { theme } from "../../styles/theme";
-import { fontSize } from "../../styles/typography";
+import { textStyle } from "../../styles/typography";
 import type { SelectSize } from "./Select.component";
 
 const sizeStyles: Record<SelectSize, ReturnType<typeof css>> = {
-    m: field,
+    m: css`
+        ${field};
+        min-height: 42px;
+    `,
     s: css`
+        ${field};
         min-height: 32px;
         padding: 2px 4px;
         border: ${borderWidth.base} solid ${theme.primary};
-        border-radius: 0;
-        outline: 0;
         background: ${theme.surfaceDark};
-        color: ${theme.text};
-        font-size: ${fontSize.m};
+        ${textStyle({ size: "m", spacing: "s" })}
 
         &:not(:disabled):hover {
             border-color: ${theme.primaryAction};
             color: ${theme.primaryAction};
-        }
-
-        &:disabled {
-            cursor: default;
-            opacity: 0.32;
         }
     `,
 };

@@ -2,7 +2,14 @@ import { createElement } from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { normalizeText, renderEventHtml } from "./text.utils";
+import { normalizeText, padNumber, renderEventHtml } from "./text.utils";
+
+describe("Utils / padNumber", () => {
+    it("should left-pad with zeros to the width of the maximum", () => {
+        expect(padNumber(7, 100)).toBe("007");
+        expect(padNumber(12, 16)).toBe("12");
+    });
+});
 
 describe("Utils / normalizeText", () => {
     it("should trim whitespace and converts text to lowercase", () => {

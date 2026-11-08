@@ -85,6 +85,7 @@ export const ScheduleFiltersPanel = ({
                         <FilterLabel key={filterKey}>
                             {label}
                             <SelectComponent
+                                size="m"
                                 aria-label={`Filter by ${label.toLocaleLowerCase()}`}
                                 value={filters[filterKey]}
                                 options={filterOptions[filterKey]}

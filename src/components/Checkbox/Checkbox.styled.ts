@@ -37,8 +37,8 @@ export const CheckboxInput = styled.input`
         height: 100%;
         place-items: center;
         color: ${theme.textSubtle};
-        content: "x";
-        ${textStyle({ size: "m", weight: "extrabold" })}
+        content: "X";
+        ${textStyle({ size: "m", weight: "extrabold", lineHeight: "none" })}
     }
 
     ${CheckboxLabel}:hover & {
